@@ -1,7 +1,11 @@
 import React from "react";
 import { Tabs, Stack, Redirect } from "expo-router";
+import { useNotifications } from '@/app/utils/useNotifications';
 
 export default function TabLayout() {
+
+    useNotifications();
+    
     return (
         <Tabs
         screenOptions={{
