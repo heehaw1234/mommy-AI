@@ -48,16 +48,16 @@ class UltraSimpleAI {
   private async getPersonalitySettings(userId: string): Promise<{mommyLvl: number, personalityType: number}> {
     try {
       // Use cached values if user hasn't changed
-      if (this.currentUserId === userId && this.cachedMommyLvl !== undefined && this.cachedPersonalityType !== undefined) {
+      /*if (this.currentUserId === userId && this.cachedMommyLvl !== undefined && this.cachedPersonalityType !== undefined) {
         return { mommyLvl: this.cachedMommyLvl, personalityType: this.cachedPersonalityType };
-      }
+      }*/
 
       const { data, error } = await supabase
         .from("Profiles")
         .select("mommy_lvl, ai_personality")
         .eq("id", userId)
         .single();
-
+      console.log(data);
       if (error) throw error;
 
       const mommyLvl = data?.mommy_lvl || 0;

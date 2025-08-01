@@ -113,6 +113,7 @@ export default function ChatbotScreen() {
           setCurrentPersonality(data.ai_personality || 0);
           setTempMommyLevel(data.mommy_lvl || 0);
           setTempPersonality(data.ai_personality || 0);
+          console.log("Loaded personality settings:", data);
         }
       } catch (error) {
         console.log("Error loading personality settings:", error);
@@ -126,6 +127,7 @@ export default function ChatbotScreen() {
     if (!session?.user?.id) return;
 
     try {
+      console.log(tempPersonality);
       const { error } = await supabase
         .from("Profiles")
         .update({ 
