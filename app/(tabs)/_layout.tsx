@@ -18,6 +18,7 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen name='chatbot'/>
+            <Tabs.Screen name='profiel'/>
         </Tabs>
     )
 }

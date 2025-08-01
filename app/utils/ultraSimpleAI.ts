@@ -175,9 +175,9 @@ class UltraSimpleAI {
       
       // Use the working endpoint first, with fallbacks for other environments
       const endpoints = [
-        'http://192.168.1.115:11434/api/generate', // Your working local network IP (primary)
+        'http://10.145.133.174:11434/api/generate', // Your working local network IP (primary)
         'http://localhost:11434/api/generate',     // Fallback for web testing
-        'http://192.168.1.115:11434/api/generate'       // Fallback for Android emulator
+        'http://10.145.133.174:11434/api/generate'       // Fallback for Android emulator
       ];
       
       for (const endpoint of endpoints) {
