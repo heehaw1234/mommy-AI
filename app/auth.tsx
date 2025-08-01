@@ -50,6 +50,7 @@ export default function Auth() {
         } catch (error) {
             Alert.alert('Error', error instanceof Error ? error.message : 'Authentication failed');
         } finally {
+    
             setLoading(false);
         }
     };

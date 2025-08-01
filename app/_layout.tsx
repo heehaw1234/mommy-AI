@@ -3,11 +3,15 @@ import { Slot, Redirect, useRouter, useSegments } from "expo-router";
 import { AppProvider, useAppContext } from "@/contexts/AppContext";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { useNotifications } from '@/app/utils/useNotifications'
+
 
 function AuthChecker() {
     const { loggedIn, isLoading } = useAppContext();
     const router = useRouter();
     const segments = useSegments();
+
+    useNotifications();
 
     console.log('🛡️ AuthChecker: Auth state check:', {
         loggedIn,
@@ -47,17 +51,17 @@ function AuthChecker() {
         );
     }
 
-    console.log('🎯 AuthChecker: Rendering current route');
+    console.log('🎯 AuthChecker: Rendering current route')
     return <Slot />;
 }
 
 export default function RootLayout() {
     console.log('🏗️ RootLayout: Component rendering');
-
     return (
         <AppProvider>
             <TaskProvider>
                 <AuthChecker />
+
             </TaskProvider>
         </AppProvider>
     );

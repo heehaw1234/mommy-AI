@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAppContext } from "@/contexts/AppContext";
+import  { useNotifications }  from '@/app/utils/useNotifications';
 
 type UserData = {
     id: string;
