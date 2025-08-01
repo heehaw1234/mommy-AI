@@ -14,12 +14,18 @@ export default {
       "supabaseUrl": process.env.SUPABASE_URL,
       "supabaseAnonKey": process.env.SUPABASE_ANON_KEY,
       "huggingFaceToken": process.env.HUGGING_FACE_TOKEN,
-      "openaiApiKey": process.env.OPENAI_API_KEY
+      "openaiApiKey": process.env.OPENAI_API_KEY,
+      "eas": {
+        "projectId": "9c45afb0-813e-4ede-acd5-b6c4db47c467"
+      }
     },
     "ios": {
+      "bundleIdentifier": "com.zhengchong.mommy",
+      "package": "com.zhengchong.mommy",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.zhengchong.mommy",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

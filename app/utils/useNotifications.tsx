@@ -34,7 +34,7 @@ async function registerForPushNotificationsAsync(): Promise<string | undefined> 
 
   const { data: token } = await Notifications.getExpoPushTokenAsync({
     projectId: process.env.EXPO_PROJECT_ID
-    }).catch(error => {
+    }).catch(error => { 
       console.error('Detailed push token error:', error);
       return { data: null };
     });
