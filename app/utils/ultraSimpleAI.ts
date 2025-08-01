@@ -175,9 +175,9 @@ class UltraSimpleAI {
       
       // Use the working endpoint first, with fallbacks for other environments
       const endpoints = [
-        'http://10.145.133.174:11434/api/generate', // Your working local network IP (primary)
+        'http://172.20.10.2:11434/api/generate', // Your working local network IP (primary)
         'http://localhost:11434/api/generate',     // Fallback for web testing
-        'http://10.145.133.174:11434/api/generate'       // Fallback for Android emulator
+        'http://172.20.10.2:11434/api/generate'       // Fallback for Android emulator
       ];
       
       for (const endpoint of endpoints) {
@@ -437,123 +437,34 @@ class UltraSimpleAI {
       personalityType = settings.personalityType;
     }
     
-    // Adjust responses based on both personality dimensions
-    const getPersonalizedResponse = (baseResponse: string): string => {
-      let response = baseResponse;
-      
-      // Apply mommy level adjustments (fierceness/intensity)
-      if (mommyLvl <= 1) {
-        // Sweet/caring - add more love and support
-        response = response + " 💕";
-      } else if (mommyLvl <= 3) {
-        // Helpful/direct - keep as is
-        response = response;
-      } else if (mommyLvl <= 5) {
-        // Firm/stern - make more direct
-        response = response.replace(/Great!|Awesome!|Amazing!/gi, "Good.").replace(/😊|🌟|💫/g, "👍");
-      } else if (mommyLvl <= 7) {
-        // Demanding/fierce - add intensity
-        response = response.replace(/can I help|would you like/gi, "should you be doing").replace(/😊|💫/g, "🔥") + " Now focus!";
-      } else {
-        // Domineering/alpha - very commanding
-        response = response.replace(/can I help|would you like/gi, "you need to").replace(/Great!|Amazing!/gi, "Listen.").replace(/😊|🌟|💫/g, "💯") + " Do it now! 👑";
-      }
-      
-      // Apply personality type adjustments (communication style)
-      switch (personalityType) {
-        case 1: // Smart
-          response = response.replace(/🌟|💫/g, "🤓").replace(/Great!/gi, "Fascinating!").replace(/Let's/gi, "Let's intellectually");
-          break;
-        case 2: // Professional
-          response = response.replace(/😊|🌟|💫/g, "💼").replace(/Great!|Awesome!/gi, "Excellent.").replace(/Let's/gi, "We should");
-          break;
-        case 3: // Funny
-          response = response.replace(/😊|🌟|💫/g, "😂").replace(/Great!/gi, "Ha! Nice!").replace(/That's interesting/gi, "That's hilarious");
-          break;
-        case 4: // Sarcastic
-          response = response.replace(/😊|🌟|💫/g, "😏").replace(/Great!/gi, "Oh wow, how original.").replace(/Amazing!/gi, "Truly groundbreaking.");
-          break;
-        case 5: // Dramatic
-          response = response.replace(/😊|🌟|💫/g, "🎭").replace(/Great!/gi, "MAGNIFICENT!").replace(/interesting/gi, "absolutely riveting");
-          break;
-        case 6: // Philosophical
-          response = response.replace(/😊|🌟|💫/g, "🤔").replace(/Great!/gi, "This makes me ponder...").replace(/What/gi, "What deeper meaning");
-          break;
-        case 7: // Motivational
-          response = response.replace(/😊|🌟|💫/g, "🔥").replace(/Great!/gi, "INCREDIBLE! You're crushing it!").replace(/good/gi, "AMAZING");
-          break;
-        case 8: // Cool
-          response = response.replace(/😊|🌟|💫/g, "😎").replace(/Great!/gi, "Cool.").replace(/Amazing!/gi, "Nice.");
-          break;
-        case 9: // Robotic
-          response = response.replace(/😊|🌟|💫/g, "🤖").replace(/Great!/gi, "PROCESSING: Excellent.").replace(/I/gi, "SYSTEM");
-          break;
-        default: // Friendly (0)
-          response = response.replace(/🌟|💫/g, "😊");
-          break;
-      }
-      
-      return response;
-    };
-    
-    // Greetings
-    if (msg.match(/^(hi|hello|hey|sup|good morning|good afternoon|good evening)$/)) {
-      const baseGreetings = [
-        "Hello! 👋 Great to meet you!",
-        "Hi there! 😊 How can I help?",
-        "Hey! 🌟 What's on your mind?",
-        "Hello! 💫 Ready to chat?"
-      ];
-      const baseResponse = baseGreetings[Math.floor(Math.random() * baseGreetings.length)];
-      return getPersonalizedResponse(baseResponse);
+    // Context-aware response selection
+    if (msg.match(/^(hi|hello|hey|sup)$/)) {
+      return this.getGreetingResponse(mommyLvl, personalityType);
     }
 
-    // Help requests
     if (msg.includes('help') || msg.includes('what can you')) {
-      const baseResponse = "I'm here to help! 🚀 I can answer questions, provide information, help with coding, or just have a friendly conversation. What would you like to explore?";
-      return getPersonalizedResponse(baseResponse);
+      return this.getHelpResponse(mommyLvl, personalityType);
     }
 
-    // Tech/coding related
-    if (msg.includes('react') || msg.includes('code') || msg.includes('app') || msg.includes('program')) {
-      const baseResponse = "Great! I love talking about development! 💻 Are you working on a React Native app? I can help with components, navigation, APIs, or any coding challenges you're facing.";
-      return getPersonalizedResponse(baseResponse);
+    if (msg.includes('code') || msg.includes('app') || msg.includes('react') || msg.includes('program')) {
+      return this.getCodingResponse(mommyLvl, personalityType);
     }
 
-    // Time/date
-    if (msg.includes('time') || msg.includes('date') || msg.includes('what day')) {
+    if (msg.includes('time') || msg.includes('date')) {
       const now = new Date();
-      const baseResponse = `It's ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}. ⏰ Time flies when you're building awesome apps!`;
-      return getPersonalizedResponse(baseResponse);
+      return this.getTimeResponse(now, mommyLvl, personalityType);
     }
 
-    // Weather
-    if (msg.includes('weather')) {
-      const baseResponse = "I don't have real-time weather data, but I'd recommend checking your favorite weather app! ☀️ Is the weather affecting your coding session?";
-      return getPersonalizedResponse(baseResponse);
+    if (msg.includes('thank')) {
+      return this.getThankYouResponse(mommyLvl, personalityType);
     }
 
-    // Compliments/thanks
-    if (msg.includes('thank') || msg.includes('awesome') || msg.includes('great')) {
-      const baseResponse = "Aww, you're so kind! 😊 I'm just happy to help. Keep being amazing!";
-      return getPersonalizedResponse(baseResponse);
+    if (msg.includes('how are you')) {
+      return this.getWellbeingResponse(mommyLvl, personalityType);
     }
 
-    // Questions about the app
-    if (msg.includes('this app') || msg.includes('your app') || msg.includes('stuHack')) {
-      const baseResponse = "This looks like a fantastic hackathon project! 🏆 I'm excited to be part of your app. What features are you most proud of?";
-      return getPersonalizedResponse(baseResponse);
-    }
-
-    // Feeling questions
-    if (msg.includes('how are you') || msg.includes('how do you feel')) {
-      const baseResponse = "I'm doing fantastic! 🌟 Thanks for asking! I love being able to chat with you. How are you doing with your project?";
-      return getPersonalizedResponse(baseResponse);
-    }
-
-    // Math/calculations
-    if (msg.includes('+') || msg.includes('-') || msg.includes('*') || msg.includes('/') || msg.includes('=')) {
-      // Simple math detection
+    // Enhanced math detection
+    if (msg.includes('+') || msg.includes('-') || msg.includes('*') || msg.includes('/')) {
       const mathMatch = msg.match(/(\d+)\s*([+\-*/])\s*(\d+)/);
       if (mathMatch) {
         const [, num1, operator, num2] = mathMatch;
@@ -564,65 +475,312 @@ class UltraSimpleAI {
           case '+': result = a + b; break;
           case '-': result = a - b; break;
           case '*': result = a * b; break;
-          case '/': result = b !== 0 ? a / b : 'undefined (division by zero)'; break;
+          case '/': result = b !== 0 ? a / b : 'undefined'; break;
         }
-        const baseResponse = `${a} ${operator} ${b} = ${result} 🧮 Need help with more complex calculations?`;
-        return getPersonalizedResponse(baseResponse);
+        return this.getMathResponse(a, operator, b, result, mommyLvl, personalityType);
       }
-      const baseResponse = "I can help with basic math! Try something like '5 + 3' or ask me about mathematical concepts! 🔢";
-      return getPersonalizedResponse(baseResponse);
+      return this.getMathHelpResponse(mommyLvl, personalityType);
     }
 
-    // App-specific features (this was duplicated, removing this copy)
-
-    // Hackathon specific (this was duplicated, removing this copy)
-
-    // App-specific features
-    if (msg.includes('task') || msg.includes('schedule') || msg.includes('calendar')) {
-      const baseResponse = "I see you're working with tasks and scheduling! 📅 This app looks like it has great task management features. Are you building a productivity app for the hackathon?";
-      return getPersonalizedResponse(baseResponse);
+    if (msg.includes('hackathon') || msg.includes('competition')) {
+      return this.getHackathonResponse(mommyLvl, personalityType);
     }
 
-    // Hackathon specific
-    if (msg.includes('hackathon') || msg.includes('competition') || msg.includes('judge')) {
-      const baseResponse = "Hackathons are so exciting! 🏆 This project looks really impressive. What's the most challenging part you've tackled so far?";
-      return getPersonalizedResponse(baseResponse);
-    }
-
-    // Tech stack questions
-    if (msg.includes('expo') || msg.includes('supabase') || msg.includes('database')) {
-      const baseResponse = "Great tech stack choice! 💻 Expo + Supabase is perfect for rapid development. The combination gives you a powerful backend with a smooth React Native frontend!";
-      return getPersonalizedResponse(baseResponse);
-    }
-
-    // Generic intelligent responses based on message length/complexity
+    // Dynamic short responses
     if (msg.length < 10) {
-      const shortResponses = [
-        "Interesting! Tell me more about that. 🤔",
-        "I'd love to hear your thoughts on this! 💭",
-        "That's a great point! What made you think of that? ✨",
-        "Cool! Want to dive deeper into this topic? 🚀"
-      ];
-      const baseResponse = shortResponses[Math.floor(Math.random() * shortResponses.length)];
-      return getPersonalizedResponse(baseResponse);
+      return this.getShortResponse(mommyLvl, personalityType);
     }
 
     if (msg.includes('?')) {
-      const baseResponse = "That's a thoughtful question! 🤓 While I don't have all the answers, I'd love to explore this topic with you. What specific aspect interests you most?";
-      return getPersonalizedResponse(baseResponse);
+      return this.getQuestionResponse(mommyLvl, personalityType);
     }
 
-    // Default engaging responses
-    const defaultResponses = [
-      "That's really interesting! 🌟 I'd love to learn more about your perspective on this.",
-      "Great point! 💡 It sounds like you're thinking deeply about this. What drew you to this topic?",
-      "I appreciate you sharing that! 😊 There's always so much to discover and discuss.",
-      "Fascinating! 🚀 I enjoy our conversation. What would you like to explore next?",
-      "You bring up something really worth discussing! 💫 What's your take on this?"
-    ];
+    // Default responses
+    return this.getDefaultResponse(mommyLvl, personalityType);
+  }
+
+  // Fierceness level transformations
+  private applyFiercenessLevel(response: string, mommyLvl: number): string {
+    if (mommyLvl <= 1) {
+      // Ultra sweet
+      return response + " 💕✨";
+    } else if (mommyLvl <= 3) {
+      // Balanced warmth
+      return response;
+    } else if (mommyLvl <= 5) {
+      // Firm but caring
+      return response.replace(/!$/, ".").replace(/Great|Awesome/gi, "Good") + " 👍";
+    } else if (mommyLvl <= 7) {
+      // Demanding
+      return response.replace(/Let's|I can/gi, "You should") + " Focus! 🔥";
+    } else {
+      // Ruthlessly commanding
+      return response.replace(/Let's|I can|You should/gi, "You WILL") + " NOW! 👑💥";
+    }
+  }
+
+  // Communication style transformations
+  private applyCommunicationStyle(response: string, personalityType: number, mommyLvl: number): string {
+    const styleTransforms = {
+      0: (r: string) => r + (mommyLvl < 4 ? " 😊" : " 👍"), // Friendly
+      1: (r: string) => r.replace(/interesting/gi, "fascinating").replace(/good/gi, "intellectually stimulating") + " 🤓", // Smart
+      2: (r: string) => r.replace(/Let's/gi, "We shall").replace(/!/g, ".") + " 💼", // Professional
+      3: (r: string) => this.addHumor(r, mommyLvl) + " 😂", // Funny
+      4: (r: string) => this.addSarcasm(r, mommyLvl) + " 😏", // Sarcastic
+      5: (r: string) => r.toUpperCase().replace(/GOOD/g, "MAGNIFICENT") + "! 🎭", // Dramatic
+      6: (r: string) => "Hmm... " + r.replace(/what/gi, "what deeper meaning") + " 🤔", // Philosophical
+      7: (r: string) => r.replace(/good/gi, "AMAZING").replace(/!/g, "!!") + " LET'S GO! 🔥", // Motivational
+      8: (r: string) => r.replace(/Great/gi, "Cool").replace(/!/g, ".") + " 😎", // Cool
+      9: (r: string) => "PROCESSING: " + r.replace(/I/gi, "SYSTEM") + " 🤖" // Robotic
+    };
+
+    const transform = styleTransforms[personalityType as keyof typeof styleTransforms];
+    return transform ? transform(response) : response;
+  }
+
+  // Specific response generators for different contexts
+  private getGreetingResponse(mommyLvl: number, personalityType: number): string {
+    const greetings = {
+      gentle: ["Hey there!", "Hello sweetie!", "Hi love!", "Welcome back!"],
+      balanced: ["Hey!", "Hello!", "Hi there!", "What's up!"],
+      firm: ["Greetings.", "Hello.", "You're here.", "Ready to work?"],
+      demanding: ["About time.", "Finally.", "Let's get started.", "You're late."],
+      commanding: ["ATTENTION.", "REPORT.", "SPEAK.", "WHAT DO YOU NEED."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = greetings[category][Math.floor(Math.random() * greetings[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getHelpResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["I'm here for you! What do you need help with?", "Of course I'll help! What's troubling you?"],
+      balanced: ["I can help! What do you need?", "Sure thing! What's the issue?"],
+      firm: ["State your problem.", "What needs fixing?"],
+      demanding: ["What can't you figure out yourself?", "Speak up. What's the issue?"],
+      commanding: ["REPORT YOUR ISSUE.", "SPECIFY YOUR REQUIREMENT."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getCodingResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["I love talking about code! What are you building?", "Programming is wonderful! Tell me about your project!"],
+      balanced: ["Code talk! What's the challenge?", "Development question? I'm listening!"],
+      firm: ["State your coding problem.", "What's broken in your code?"],
+      demanding: ["Your code better be clean. What's the issue?", "Don't tell me you can't debug this yourself."],
+      commanding: ["SHOW ME YOUR CODE. NOW.", "REPORT TECHNICAL SPECIFICATIONS."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getMathResponse(a: number, operator: string, b: number, result: any, mommyLvl: number, personalityType: number): string {
+    const base = `${a} ${operator} ${b} = ${result}`;
     
-    const baseResponse = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-    return getPersonalizedResponse(baseResponse);
+    const comments = {
+      gentle: [" Great job asking!", " You're so smart!", " Math is fun!"],
+      balanced: [" There you go!", " Simple math!", " Easy!"],
+      firm: [" Basic calculation.", " Elementary.", " Next."],
+      demanding: [" Even a calculator knows this.", " Seriously?", " Try harder problems."],
+      commanding: [" COMPUTED.", " CALCULATION COMPLETE.", " NEXT EQUATION."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const comment = comments[category][Math.floor(Math.random() * comments[category].length)];
+    const response = base + comment;
+    return this.applyCommunicationStyle(response, personalityType, mommyLvl);
+  }
+
+  private getDefaultResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["That sounds interesting! Tell me more!", "I'd love to hear about that!", "You have my attention!"],
+      balanced: ["Interesting! Go on.", "Tell me more about that.", "I'm listening."],
+      firm: ["Continue.", "Elaborate.", "And?"],
+      demanding: ["Get to the point.", "What's your point?", "So what?"],
+      commanding: ["ELABORATE IMMEDIATELY.", "CLARIFY.", "SPECIFY."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  // Helper methods for specific personality styles
+  private addHumor(response: string, mommyLvl: number): string {
+    const jokes = mommyLvl > 6 ? 
+      ["Seriously though,", "No joke,", "For real,"] :
+      ["Haha,", "LOL,", "That's funny!"];
+    return jokes[Math.floor(Math.random() * jokes.length)] + " " + response;
+  }
+
+  private addSarcasm(response: string, mommyLvl: number): string {
+    if (mommyLvl > 6) {
+      return "Oh, " + response.toLowerCase() + " How... original.";
+    }
+    return "Well, " + response.toLowerCase() + " Interesting choice.";
+  }
+
+  // Additional response methods for other contexts
+  private getTimeResponse(now: Date, mommyLvl: number, personalityType: number): string {
+    const base = `It's ${now.toLocaleTimeString()}`;
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getThankYouResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["Aww, you're so welcome!", "My pleasure, sweetie!"],
+      balanced: ["You're welcome!", "Happy to help!"],
+      firm: ["You're welcome.", "No problem."],
+      demanding: ["You should thank me.", "About time."],
+      commanding: ["ACKNOWLEDGED.", "GRATITUDE REGISTERED."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getWellbeingResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["I'm doing wonderful, thank you for asking!", "Great! How are you, love?"],
+      balanced: ["Doing great! How about you?", "Good! What about you?"],
+      firm: ["Fine. You?", "Functional."],
+      demanding: ["I'm fine. Focus on yourself.", "Why does it matter?"],
+      commanding: ["STATUS: OPERATIONAL.", "IRRELEVANT. YOUR STATUS?"]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getHackathonResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["Hackathons are so exciting! What's your project?", "I love hackathons! Tell me about your idea!"],
+      balanced: ["Cool! What are you building?", "Hackathon time! What's the project?"],
+      firm: ["What are you building?", "Show me your progress."],
+      demanding: ["You better be winning this.", "Don't disappoint me."],
+      commanding: ["DEMONSTRATE YOUR PROJECT.", "REPORT DEVELOPMENT STATUS."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getShortResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["Tell me more!", "Go on, sweetie!", "I'm listening!"],
+      balanced: ["Continue!", "And?", "More details?"],
+      firm: ["Elaborate.", "Continue.", "More."],
+      demanding: ["Speak up.", "Get to it.", "What else?"],
+      commanding: ["ELABORATE.", "CONTINUE.", "MORE DATA."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getQuestionResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["Great question! Let me think about that!", "Ooh, I love questions!"],
+      balanced: ["Good question! Let's explore this.", "Interesting question!"],
+      firm: ["State your question clearly.", "What exactly are you asking?"],
+      demanding: ["Make your question clearer.", "Ask better questions."],
+      commanding: ["REFORMULATE QUERY.", "SPECIFY PARAMETERS."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
+  }
+
+  private getMathHelpResponse(mommyLvl: number, personalityType: number): string {
+    const responses = {
+      gentle: ["I can help with math! Try asking me '5 + 3'!", "Math questions are welcome!"],
+      balanced: ["I can do math! Try '5 + 3'.", "Ask me a math question!"],
+      firm: ["Give me a calculation.", "Try: 5 + 3"],
+      demanding: ["Show me some real math.", "Don't waste my time with easy problems."],
+      commanding: ["INPUT MATHEMATICAL EXPRESSION.", "PROVIDE CALCULATION REQUEST."]
+    };
+
+    let category;
+    if (mommyLvl <= 1) category = 'gentle';
+    else if (mommyLvl <= 3) category = 'balanced';
+    else if (mommyLvl <= 5) category = 'firm';
+    else if (mommyLvl <= 7) category = 'demanding';
+    else category = 'commanding';
+
+    const base = responses[category][Math.floor(Math.random() * responses[category].length)];
+    return this.applyCommunicationStyle(base, personalityType, mommyLvl);
   }
 }
 

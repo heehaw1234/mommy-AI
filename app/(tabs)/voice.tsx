@@ -13,10 +13,9 @@ import {
     KeyboardAvoidingView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTaskContext } from '@/contexts/TaskContext';
 import { useAppContext } from '@/contexts/AppContext';
+import { useTaskContext } from '@/contexts/TaskContext';
 import ultraSimpleAI from '@/app/utils/ultraSimpleAI';
-import taskAIService from '@/app/utils/taskAIService';
 
 // Web Speech API types for TypeScript
 declare global {
@@ -37,17 +36,27 @@ interface VoiceRecognition {
     lang: string;
 }
 
+interface TaskPreview {
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    category: string;
+    priority: string;
+}
+
 export default function VoicePage() {
-    const { addTaskToState, isLoading } = useTaskContext();
     const { session } = useAppContext();
+    const { addTaskToState } = useTaskContext();
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [textInput, setTextInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [recognition, setRecognition] = useState<VoiceRecognition | null>(null);
     const [permissionGranted, setPermissionGranted] = useState(false);
-    const [generatedTasks, setGeneratedTasks] = useState<string[]>([]);
     const [showTextInput, setShowTextInput] = useState(Platform.OS !== 'web');
+    const [taskPreview, setTaskPreview] = useState<TaskPreview | null>(null);
+    const [showTaskEditor, setShowTaskEditor] = useState(false);
 
     // Initialize speech recognition
     useEffect(() => {
@@ -61,9 +70,11 @@ export default function VoicePage() {
     }, []);
 
     const initializeWebSpeechRecognition = () => {
-        if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            const recognitionInstance = new SpeechRecognition();
+        if (Platform.OS === 'web' && typeof globalThis !== 'undefined' && globalThis.window) {
+            const win = globalThis.window as any;
+            if (win.SpeechRecognition || win.webkitSpeechRecognition) {
+                const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
+                const recognitionInstance = new SpeechRecognition();
             
             recognitionInstance.continuous = true;
             recognitionInstance.interimResults = true;
@@ -98,6 +109,10 @@ export default function VoicePage() {
             setRecognition(recognitionInstance);
             setPermissionGranted(true);
             setShowTextInput(false); // Hide text input on web if speech works
+            } else {
+                console.log('Speech recognition not supported, showing text input');
+                setShowTextInput(true);
+            }
         } else {
             console.log('Speech recognition not supported, showing text input');
             setShowTextInput(true);
@@ -138,80 +153,58 @@ export default function VoicePage() {
     const processWithAI = async () => {
         const inputText = transcript.trim();
         if (!inputText) {
-            Alert.alert('No Input Detected', 'Please speak something or type your tasks first.');
+            Alert.alert('No Input Detected', 'Please speak something or type your task description first.');
             return;
         }
 
         setIsProcessing(true);
-        setGeneratedTasks([]);
 
         try {
-            console.log('🎤 Processing input with enhanced AI service:', inputText);
+            console.log('🎤 Processing input for task creation:', inputText);
             
-            // Use the enhanced AI service for better task extraction
-            const extractionResult = await taskAIService.extractTasksFromInput(
-                inputText,
-                session?.user?.id,
-                {
-                    currentTime: new Date(),
-                    userPreferences: null, // Could be expanded with user preferences
-                    existingTasks: [] // Could include existing tasks for context
+            // Use AI to extract task information
+            const taskExtractionPrompt = `Extract task information from this text: "${inputText}"
+            
+Please respond with ONLY a JSON object in this exact format:
+{
+  "title": "brief task title",
+  "description": "detailed description", 
+  "date": "YYYY-MM-DD or 'today' or 'tomorrow'",
+  "time": "HH:MM or 'no time specified'",
+  "category": "work/personal/shopping/health/other",
+  "priority": "low/medium/high"
+}
+
+If no specific date/time is mentioned, use reasonable defaults.`;
+
+            const aiResponse = await ultraSimpleAI.generateResponse(taskExtractionPrompt, session?.user?.id);
+            console.log('🤖 AI Extraction Response:', aiResponse);
+            
+            // Try to parse the JSON response
+            let taskData: TaskPreview;
+            try {
+                // Clean the response to extract JSON
+                const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    throw new Error('No JSON found in response');
                 }
-            );
-
-            console.log('🤖 AI Extraction Result:', extractionResult);
-            
-            const { tasks, confidence } = extractionResult;
-
-            // Show confidence level to user if low
-            if (confidence < 0.5) {
-                console.log('⚠️ Low confidence extraction, may need user review');
-            }
-
-            setGeneratedTasks(tasks.map(task => 
-                `${task.title} - ${task.date} at ${task.time} (${task.category})`
-            ));
-
-            // Create the tasks in the database
-            let successCount = 0;
-            for (const taskData of tasks) {
-                const task = {
-                    text: taskData.title,
-                    description: taskData.description,
-                    time: taskData.time,
-                    date: taskData.date,
-                    completed: false
+                taskData = JSON.parse(jsonMatch[0]);
+            } catch (parseError) {
+                console.error('Failed to parse AI response:', parseError);
+                // Fallback: create a basic task
+                taskData = {
+                    title: inputText.length > 50 ? inputText.substring(0, 50) + '...' : inputText,
+                    description: inputText,
+                    date: 'today',
+                    time: 'no time specified',
+                    category: 'other',
+                    priority: 'medium'
                 };
-
-                console.log('➕ Creating task:', task);
-                const createdTask = await addTaskToState(task);
-                if (createdTask) {
-                    successCount++;
-                    console.log('✅ Task created successfully:', createdTask);
-                } else {
-                    console.error('❌ Failed to create task:', task);
-                }
             }
 
-            const confidenceText = confidence > 0.7 ? 'with high confidence' : 
-                                  confidence > 0.4 ? 'with good confidence' : 
-                                  'with basic interpretation';
-
-            if (successCount > 0) {
-                Alert.alert(
-                    'Tasks Created! 🎉', 
-                    `Successfully created ${successCount} out of ${tasks.length} task(s) ${confidenceText}.\n\nProcessing time: ${extractionResult.processingTime}ms`,
-                    [{ 
-                        text: 'Great!', 
-                        onPress: () => {
-                            setTranscript('');
-                            setGeneratedTasks([]);
-                        }
-                    }]
-                );
-            } else {
-                Alert.alert('Error', 'Failed to create any tasks. Please try again.');
-            }
+            // Show the task preview for editing
+            setTaskPreview(taskData);
+            setShowTaskEditor(true);
 
         } catch (error) {
             console.error('Error processing input:', error);
@@ -221,10 +214,63 @@ export default function VoicePage() {
         }
     };
 
+    const saveTask = async () => {
+        if (!taskPreview) return;
+
+        try {
+            console.log('💾 Saving task:', taskPreview);
+            
+            // Convert preview data to task format
+            const task = {
+                text: taskPreview.title,
+                description: taskPreview.description,
+                time: taskPreview.time === 'no time specified' ? '' : taskPreview.time,
+                date: taskPreview.date === 'today' ? new Date().toISOString().split('T')[0] : 
+                      taskPreview.date === 'tomorrow' ? new Date(Date.now() + 86400000).toISOString().split('T')[0] :
+                      taskPreview.date,
+                completed: false,
+                category: taskPreview.category,
+                priority: taskPreview.priority
+            };
+
+            const savedTask = await addTaskToState(task);
+            
+            if (savedTask) {
+                Alert.alert('Task Created! 🎉', `Successfully created task: "${taskPreview.title}"`, [
+                    { 
+                        text: 'Great!', 
+                        onPress: () => {
+                            setTaskPreview(null);
+                            setShowTaskEditor(false);
+                            setTranscript('');
+                        }
+                    }
+                ]);
+            } else {
+                Alert.alert('Error', 'Failed to create task. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error saving task:', error);
+            Alert.alert('Save Error', 'Failed to save task. Please try again.');
+        }
+    };
+
+    const cancelTaskCreation = () => {
+        setTaskPreview(null);
+        setShowTaskEditor(false);
+    };
+
+    const updateTaskPreview = (field: keyof TaskPreview, value: string) => {
+        if (taskPreview) {
+            setTaskPreview({ ...taskPreview, [field]: value });
+        }
+    };
+
     const clearAll = () => {
         setTranscript('');
         setTextInput('');
-        setGeneratedTasks([]);
+        setTaskPreview(null);
+        setShowTaskEditor(false);
     };
 
     return (
@@ -234,8 +280,8 @@ export default function VoicePage() {
                 <Text style={styles.headerTitle}>🎤 Voice to Tasks</Text>
                 <Text style={styles.headerSubtitle}>
                     {Platform.OS === 'web' 
-                        ? 'Speak or type your tasks and let AI organize them'
-                        : 'Describe your tasks and let AI organize them'
+                        ? 'Speak or type your tasks and AI will help organize them'
+                        : 'Type your tasks and AI will help organize them'
                     }
                 </Text>
             </View>
@@ -255,7 +301,7 @@ export default function VoicePage() {
                                         isListening ? styles.recordButtonActive : {}
                                     ]}
                                     onPress={isListening ? stopListening : startListening}
-                                    disabled={isProcessing || isLoading}
+                                    disabled={isProcessing}
                                 >
                                     <Ionicons 
                                         name={isListening ? "stop" : "mic"} 
@@ -341,36 +387,117 @@ export default function VoicePage() {
                             <TouchableOpacity
                                 style={[
                                     styles.processButton,
-                                    (isProcessing || isLoading) ? styles.processButtonDisabled : {}
+                                    isProcessing ? styles.processButtonDisabled : {}
                                 ]}
                                 onPress={processWithAI}
-                                disabled={isProcessing || isLoading}
+                                disabled={isProcessing}
                             >
-                                {isProcessing || isLoading ? (
+                                {isProcessing ? (
                                     <>
                                         <ActivityIndicator color="#fff" size="small" />
-                                        <Text style={styles.processButtonText}>Creating Tasks...</Text>
+                                        <Text style={styles.processButtonText}>Processing...</Text>
                                     </>
                                 ) : (
                                     <>
                                         <Ionicons name="sparkles" size={20} color="#fff" />
-                                        <Text style={styles.processButtonText}>Create Tasks with AI</Text>
+                                        <Text style={styles.processButtonText}>Create Task with AI</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
                         </View>
                     ) : null}
 
-                    {/* Generated Tasks Preview */}
-                    {generatedTasks.length > 0 && (
-                        <View style={styles.tasksPreviewSection}>
-                            <Text style={styles.tasksPreviewTitle}>✨ Generated Tasks</Text>
-                            {generatedTasks.map((task, index) => (
-                                <View key={index} style={styles.taskPreviewItem}>
-                                    <Ionicons name="checkmark-circle-outline" size={20} color="#22c55e" />
-                                    <Text style={styles.taskPreviewText}>{task}</Text>
+                    {/* Task Preview Editor */}
+                    {showTaskEditor && taskPreview && (
+                        <View style={styles.taskEditorSection}>
+                            <Text style={styles.taskEditorTitle}>✨ Review Your Task</Text>
+                            <Text style={styles.taskEditorSubtitle}>Edit the details before saving</Text>
+                            
+                            <View style={styles.taskEditForm}>
+                                <View style={styles.formGroup}>
+                                    <Text style={styles.formLabel}>📝 Task Title</Text>
+                                    <TextInput
+                                        style={styles.formInput}
+                                        value={taskPreview.title}
+                                        onChangeText={(text) => updateTaskPreview('title', text)}
+                                        placeholder="Enter task title"
+                                        multiline={false}
+                                    />
                                 </View>
-                            ))}
+
+                                <View style={styles.formGroup}>
+                                    <Text style={styles.formLabel}>📄 Description</Text>
+                                    <TextInput
+                                        style={[styles.formInput, styles.formInputMultiline]}
+                                        value={taskPreview.description}
+                                        onChangeText={(text) => updateTaskPreview('description', text)}
+                                        placeholder="Enter task description"
+                                        multiline={true}
+                                        numberOfLines={3}
+                                    />
+                                </View>
+
+                                <View style={styles.formRow}>
+                                    <View style={[styles.formGroup, styles.formGroupHalf]}>
+                                        <Text style={styles.formLabel}>📅 Date</Text>
+                                        <TextInput
+                                            style={styles.formInput}
+                                            value={taskPreview.date}
+                                            onChangeText={(text) => updateTaskPreview('date', text)}
+                                            placeholder="YYYY-MM-DD"
+                                        />
+                                    </View>
+
+                                    <View style={[styles.formGroup, styles.formGroupHalf]}>
+                                        <Text style={styles.formLabel}>⏰ Time</Text>
+                                        <TextInput
+                                            style={styles.formInput}
+                                            value={taskPreview.time}
+                                            onChangeText={(text) => updateTaskPreview('time', text)}
+                                            placeholder="HH:MM or leave empty"
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={styles.formRow}>
+                                    <View style={[styles.formGroup, styles.formGroupHalf]}>
+                                        <Text style={styles.formLabel}>🏷️ Category</Text>
+                                        <TextInput
+                                            style={styles.formInput}
+                                            value={taskPreview.category}
+                                            onChangeText={(text) => updateTaskPreview('category', text)}
+                                            placeholder="work/personal/other"
+                                        />
+                                    </View>
+
+                                    <View style={[styles.formGroup, styles.formGroupHalf]}>
+                                        <Text style={styles.formLabel}>⚡ Priority</Text>
+                                        <TextInput
+                                            style={styles.formInput}
+                                            value={taskPreview.priority}
+                                            onChangeText={(text) => updateTaskPreview('priority', text)}
+                                            placeholder="low/medium/high"
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={styles.taskEditorButtons}>
+                                    <TouchableOpacity 
+                                        style={styles.cancelButton}
+                                        onPress={cancelTaskCreation}
+                                    >
+                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity 
+                                        style={styles.saveButton}
+                                        onPress={saveTask}
+                                    >
+                                        <Ionicons name="checkmark" size={20} color="#fff" />
+                                        <Text style={styles.saveButtonText}>Save Task</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
                         </View>
                     )}
 
@@ -388,11 +515,11 @@ export default function VoicePage() {
                         </View>
                         <View style={styles.instructionItem}>
                             <Text style={styles.instructionStep}>2.</Text>
-                            <Text style={styles.instructionText}>AI extracts individual tasks with times and dates</Text>
+                            <Text style={styles.instructionText}>AI extracts task details and shows you a preview</Text>
                         </View>
                         <View style={styles.instructionItem}>
                             <Text style={styles.instructionStep}>3.</Text>
-                            <Text style={styles.instructionText}>Tasks are automatically saved to your calendar</Text>
+                            <Text style={styles.instructionText}>Review and edit the task before saving to your list</Text>
                         </View>
                         
                         <Text style={styles.exampleText}>
@@ -694,5 +821,93 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         borderLeftWidth: 4,
         borderLeftColor: '#2563eb',
+    },
+    // Task Editor Styles
+    taskEditorSection: {
+        backgroundColor: '#fff',
+        margin: 16,
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    taskEditorTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#1f2937',
+        marginBottom: 4,
+    },
+    taskEditorSubtitle: {
+        fontSize: 14,
+        color: '#6b7280',
+        marginBottom: 20,
+    },
+    taskEditForm: {
+        gap: 16,
+    },
+    formGroup: {
+        marginBottom: 16,
+    },
+    formGroupHalf: {
+        flex: 1,
+    },
+    formRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    formLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: 8,
+    },
+    formInput: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        backgroundColor: '#fff',
+        color: '#1f2937',
+    },
+    formInputMultiline: {
+        height: 80,
+        textAlignVertical: 'top',
+    },
+    taskEditorButtons: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 20,
+    },
+    cancelButton: {
+        flex: 1,
+        backgroundColor: '#6b7280',
+        borderRadius: 12,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cancelButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    saveButton: {
+        flex: 2,
+        backgroundColor: '#22c55e',
+        borderRadius: 12,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    saveButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
