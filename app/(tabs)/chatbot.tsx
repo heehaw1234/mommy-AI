@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   Modal,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from "@react-native-community/slider";
@@ -229,25 +230,14 @@ export default function ChatbotScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>AI Assistant</Text>
-          <Text style={styles.headerSubtitle}>Powered by Llama</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.personalityButton}
-          onPress={openPersonalityModal}
-        >
-          <Text style={styles.personalityButtonText}>
-            {PERSONALITY_EMOJIS[currentPersonality]} {MOMMY_LABELS[currentMommyLevel]}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <KeyboardAvoidingView
-        style={styles.chatContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <Image
+        source={require('../../assets/images/mom-baby-mother-nurturing-love-260nw-1873658500.webp')}
+        style={{ width: 100, height: 100, borderRadius: 24, marginBottom: 12, backgroundColor: '#fff0f6', shadowColor: '#e75480', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6 }}
+        resizeMode="contain"
+      />
+      <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#e75480', marginBottom: 4, textShadowColor: '#f7eaff', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 }}>Mommy-AI Chatbot</Text>
+      <Text style={{ fontSize: 17, color: '#a259c2', marginBottom: 18, fontWeight: '500' }}>Your personal assistant</Text>
+      <View style={styles.card}>
         <ScrollView
           ref={scrollViewRef}
           style={styles.messagesContainer}
@@ -260,7 +250,6 @@ export default function ChatbotScreen() {
             </View>
           )}
         </ScrollView>
-
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.textInput}
@@ -279,7 +268,7 @@ export default function ChatbotScreen() {
             <Text style={styles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
 
       {/* Personality Modal */}
       <Modal
@@ -407,7 +396,10 @@ export default function ChatbotScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 40,
+    backgroundColor: '#ffe6f0', // beautiful pink
   },
   header: {
     backgroundColor: '#007AFF',
@@ -454,16 +446,23 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
     padding: 12,
     borderRadius: 18,
+    backgroundColor: '#fff0f6', // light pink for visibility
+    borderWidth: 1,
+    borderColor: '#e75480', // dark pink border
+    shadowColor: '#e75480',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 6,
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#e75480', // dark pink
   },
   botMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: 'white',
+    backgroundColor: '#fff0f6', // light pink
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#f7eaff', // purple accent
   },
   messageText: {
     fontSize: 16,
@@ -471,9 +470,11 @@ const styles = StyleSheet.create({
   },
   userMessageText: {
     color: 'white',
+    fontWeight: 'bold',
   },
   botMessageText: {
-    color: '#333',
+    color: '#a259c2', // purple
+    fontWeight: '500',
   },
   timestamp: {
     fontSize: 12,
@@ -488,20 +489,30 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    backgroundColor: '#fff0f6', // match theme
+    borderTopWidth: 2,
+    borderTopColor: '#e75480', // dark pink
+    borderRadius: 16,
+    marginHorizontal: 8,
+    marginBottom: 12,
+    shadowColor: '#e75480',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 6,
   },
   textInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: 2,
+    borderColor: '#e75480', // dark pink
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     maxHeight: 100,
     marginRight: 12,
+    backgroundColor: '#fff',
+    color: '#e75480',
+    fontWeight: '500',
   },
   sendButton: {
     backgroundColor: '#007AFF',
@@ -517,6 +528,21 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  card: {
+    width: '90%',
+    backgroundColor: '#fff0f6', // light pink
+    borderRadius: 18,
+    padding: 22,
+    shadowColor: '#e75480', // dark pink
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 5,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: '#f7eaff', // purple accent
+    alignSelf: 'center',
   },
   // Modal styles
   modalContainer: {

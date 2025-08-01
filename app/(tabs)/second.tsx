@@ -1,4 +1,5 @@
-import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Modal, Platform, StatusBar, ActivityIndicator, Alert } from "react-native";
+import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Modal, Platform, StatusBar, ActivityIndicator, Alert, Image } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useEffect } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -23,6 +24,27 @@ import { buttonStyles } from "./styles/buttonStyles";
 // Import context
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
+
+const mommyCardStyle = {
+  backgroundColor: '#fff0f6', // light pink
+  borderRadius: 18,
+  padding: 22,
+  shadowColor: '#e75480', // dark pink
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  elevation: 5,
+  marginBottom: 28,
+  borderWidth: 1,
+  borderColor: '#f7eaff', // purple accent
+};
+const mommyContainerStyle = {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  paddingTop: 40,
+  backgroundColor: '#ffe6f0', // beautiful pink
+};
 
 export default function TodoListScreen() {
     // Authentication context
@@ -289,12 +311,23 @@ export default function TodoListScreen() {
 
     return (
         <SafeAreaView style={layoutStyles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
-            <ScrollView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+            <StatusBar barStyle="light-content" backgroundColor="#e75480" />
+            <LinearGradient
+                colors={["#ffe6f0", "#f7eaff", "#a259c2"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ flex: 1 }}
+            >
+            <ScrollView style={{ flex: 1, backgroundColor: 'transparent' }}>
                 {/* Header */}
                 <View style={layoutStyles.header}>
                     <Text style={layoutStyles.headerTitle}>📋 Todo List</Text>
                     <Text style={layoutStyles.headerSubtitle}>Manage your tasks efficiently</Text>
+                </View>
+
+                {/* Logo only, no title */}
+                <View style={{width: '100%', alignItems: 'center', marginBottom: 16}}>
+                    <Image source={require('../../assets/images/mom-baby-mother-nurturing-love-260nw-1873658500.webp')} style={{width: 90, height: 90, borderRadius: 24, marginBottom: 8, backgroundColor: '#fff0f6', shadowColor: '#e75480', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 10}} resizeMode="contain" />
                 </View>
 
                 {/* Add Task Button */}
@@ -313,10 +346,14 @@ export default function TodoListScreen() {
                     {/* Filter Buttons */}
                     <View style={{
                         flexDirection: 'row',
-                        backgroundColor: '#f8fafc',
-                        borderRadius: 12,
-                        padding: 4,
-                        marginBottom: 16,
+                        backgroundColor: '#f7eaff', // soft purple
+                        borderRadius: 16,
+                        padding: 6,
+                        marginBottom: 18,
+                        shadowColor: '#e75480',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.10,
+                        shadowRadius: 6,
                     }}>
                         <TouchableOpacity
                             onPress={() => setFilter('all')}
@@ -406,116 +443,121 @@ export default function TodoListScreen() {
                                 <View
                                     key={task.id || index}
                                     style={{
-                                        backgroundColor: '#fff',
-                                        borderRadius: 12,
-                                        padding: 16,
-                                        marginBottom: 12,
-                                        shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 2 },
-                                        shadowOpacity: 0.1,
-                                        shadowRadius: 4,
-                                        elevation: 3,
-                                        borderLeftWidth: 4,
+                                        backgroundColor: 'rgba(255,240,246,0.95)', // light pink card with slight transparency
+                                        borderRadius: 26,
+                                        padding: 36,
+                                        marginBottom: 26,
+                                        shadowColor: '#a259c2',
+                                        shadowOffset: { width: 0, height: 6 },
+                                        shadowOpacity: 0.18,
+                                        shadowRadius: 18,
+                                        elevation: 9,
+                                        borderLeftWidth: 10,
                                         borderLeftColor: status.color,
                                         opacity: task.completed ? 0.7 : 1,
+                                        flexDirection: 'row',
+                                        alignItems: 'flex-start',
+                                        minHeight: 110,
                                     }}
                                 >
-                                    <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                                        {/* Checkbox */}
-                                        <TouchableOpacity
-                                            onPress={() => handleToggleCompletion(task)}
-                                            style={{
-                                                width: 24,
-                                                height: 24,
-                                                borderRadius: 6,
-                                                borderWidth: 2,
-                                                borderColor: task.completed ? '#22c55e' : '#d1d5db',
-                                                backgroundColor: task.completed ? '#22c55e' : '#fff',
-                                                justifyContent: 'center',
-                                                alignItems: 'center',
-                                                marginRight: 12,
-                                                marginTop: 2,
-                                            }}
-                                        >
-                                            {task.completed && (
-                                                <Ionicons name="checkmark" size={16} color="#fff" />
-                                            )}
-                                        </TouchableOpacity>
+                                    {/* Checkbox */}
+                                    <TouchableOpacity
+                                        onPress={() => handleToggleCompletion(task)}
+                                        style={{
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: 8,
+                                            borderWidth: 2,
+                                            borderColor: task.completed ? '#22c55e' : '#e75480',
+                                            backgroundColor: task.completed ? '#22c55e' : '#fff',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            marginRight: 14,
+                                            marginTop: 2,
+                                        }}
+                                    >
+                                        {task.completed && (
+                                            <Ionicons name="checkmark" size={18} color="#fff" />
+                                        )}
+                                    </TouchableOpacity>
 
-                                        {/* Task Content */}
-                                        <TouchableOpacity 
-                                            style={{ flex: 1 }}
-                                            onPress={() => setViewTask({ task, idx: index })}
-                                        >
-                                            <Text style={{
-                                                fontSize: 16,
-                                                fontWeight: 'bold',
-                                                color: task.completed ? '#9ca3af' : '#222',
-                                                marginBottom: 4,
+                                    {/* Task Content */}
+                                    <TouchableOpacity 
+                                        style={{ flex: 1 }}
+                                        onPress={() => setViewTask({ task, idx: index })}
+                                    >
+                                        <Text style={{
+                                            fontSize: 18,
+                                            fontWeight: 'bold',
+                                            color: task.completed ? '#9ca3af' : '#e75480',
+                                            marginBottom: 4,
+                                            textDecorationLine: task.completed ? 'line-through' : 'none',
+                                        }}>
+                                            {task.completed ? '✅ ' : '🍼 '}{task.text}
+                                        </Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                                            <Ionicons name="time-outline" size={18} color="#a259c2" />
+                                            <Text style={{ 
+                                                color: task.completed ? '#9ca3af' : '#a259c2', 
+                                                marginLeft: 6, 
+                                                fontSize: 15,
                                                 textDecorationLine: task.completed ? 'line-through' : 'none',
                                             }}>
-                                                {task.text}
+                                                {formatDateForDisplay(task.date)} at {task.time}
                                             </Text>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                                                <Ionicons name="time-outline" size={16} color="#666" />
-                                                <Text style={{ 
-                                                    color: task.completed ? '#9ca3af' : '#666', 
-                                                    marginLeft: 4, 
-                                                    fontSize: 14,
-                                                    textDecorationLine: task.completed ? 'line-through' : 'none',
-                                                }}>
-                                                    {formatDateForDisplay(task.date)} at {task.time}
-                                                </Text>
-                                            </View>
-                                            {task.description && (
-                                                <Text style={{
-                                                    color: task.completed ? '#9ca3af' : '#888',
-                                                    fontSize: 14,
-                                                    fontStyle: 'italic',
-                                                    marginTop: 4,
-                                                    textDecorationLine: task.completed ? 'line-through' : 'none',
-                                                }}>
-                                                    {task.description.length > 60 
-                                                        ? task.description.substring(0, 60) + "..." 
-                                                        : task.description}
-                                                </Text>
-                                            )}
-                                            <View style={{
-                                                backgroundColor: status.color,
-                                                paddingHorizontal: 8,
-                                                paddingVertical: 2,
-                                                borderRadius: 12,
-                                                alignSelf: 'flex-start',
-                                                marginTop: 8,
+                                        </View>
+                                        {task.description && (
+                                            <Text style={{
+                                                color: task.completed ? '#9ca3af' : '#a259c2',
+                                                fontSize: 15,
+                                                fontStyle: 'italic',
+                                                marginTop: 4,
+                                                textDecorationLine: task.completed ? 'line-through' : 'none',
                                             }}>
-                                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '500' }}>
-                                                    {status.status.toUpperCase()}
-                                                </Text>
-                                            </View>
-                                        </TouchableOpacity>
+                                                {task.description.length > 60 
+                                                    ? task.description.substring(0, 60) + "..." 
+                                                    : task.description}
+                                            </Text>
+                                        )}
+                                        <View style={{
+                                            backgroundColor: status.color,
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 3,
+                                            borderRadius: 14,
+                                            alignSelf: 'flex-start',
+                                            marginTop: 8,
+                                            shadowColor: status.color,
+                                            shadowOffset: { width: 0, height: 1 },
+                                            shadowOpacity: 0.15,
+                                            shadowRadius: 3,
+                                        }}>
+                                            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>
+                                                {status.status.toUpperCase()}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
 
-                                        {/* Delete Button */}
-                                        <TouchableOpacity
-                                            onPress={(e) => {
-                                                e.stopPropagation();
-                                                Alert.alert(
-                                                    "Delete Task",
-                                                    "Are you sure you want to delete this task?",
-                                                    [
-                                                        { text: "Cancel", style: "cancel" },
-                                                        { 
-                                                            text: "Delete", 
-                                                            style: "destructive",
-                                                            onPress: () => handleRemoveTask(task)
-                                                        }
-                                                    ]
-                                                );
-                                            }}
-                                            style={{ padding: 8 }}
-                                        >
-                                            <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                                        </TouchableOpacity>
-                                    </View>
+                                    {/* Delete Button */}
+                                    <TouchableOpacity
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            Alert.alert(
+                                                "Delete Task",
+                                                "Are you sure you want to delete this task?",
+                                                [
+                                                    { text: "Cancel", style: "cancel" },
+                                                    { 
+                                                        text: "Delete", 
+                                                        style: "destructive",
+                                                        onPress: () => handleRemoveTask(task)
+                                                    }
+                                                ]
+                                            );
+                                        }}
+                                        style={{ padding: 10 }}
+                                    >
+                                        <Ionicons name="trash-outline" size={22} color="#ef4444" />
+                                    </TouchableOpacity>
                                 </View>
                             );
                         })
@@ -900,6 +942,7 @@ export default function TodoListScreen() {
                 </Modal>
 
             </ScrollView>
+            </LinearGradient>
         </SafeAreaView>
     );
 }

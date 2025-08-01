@@ -1,4 +1,4 @@
-import { Text, View, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { Text, View, TextInput, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
 import { useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
@@ -110,82 +110,84 @@ export default function Index() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Profile</Text>
-
-            {userData ? (
-                <View style={styles.profileContainer}>
-                    {/* Name Section */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Name</Text>
-                        {isEditing ? (
-                            <View style={styles.editContainer}>
-                                <TextInput
-                                    style={styles.input}
-                                    value={editedName}
-                                    onChangeText={setEditedName}
-                                    placeholder="Enter your name"
-                                    autoFocus
-                                />
-                                <View style={styles.editButtons}>
+            {/* Add header with logo and title */}
+            <View style={{width: '100%', alignItems: 'center', marginBottom: 16}}>
+                <Image source={require('../../assets/images/mom-baby-mother-nurturing-love-260nw-1873658500.webp')} style={{width: 80, height: 80, borderRadius: 20, marginBottom: 8, backgroundColor: '#fff0f6', shadowColor: '#e75480', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6}} resizeMode="contain" />
+                <Text style={{fontSize: 28, fontWeight: 'bold', color: '#e75480', textShadowColor: '#f7eaff', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2}}>Profile</Text>
+            </View>
+            {/* Use vibrant card style for main container */}
+            <View style={styles.card}>
+                {userData ? (
+                    <View style={styles.infoGroup}>
+                        {/* Name Section */}
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.infoLabel}>Name:</Text>
+                            {isEditing ? (
+                                <View style={styles.editContainer}>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={editedName}
+                                        onChangeText={setEditedName}
+                                        placeholder="Enter your name"
+                                        autoFocus
+                                    />
+                                    <View style={styles.editButtons}>
+                                        <TouchableOpacity
+                                            style={[styles.button, styles.saveButton]}
+                                            onPress={handleSaveName}
+                                            disabled={isLoading || !editedName.trim()}
+                                        >
+                                            <Text style={styles.buttonText}>Save</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.button, styles.cancelButton]}
+                                            onPress={handleCancelEdit}
+                                            disabled={isLoading}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            ) : (
+                                <View style={styles.displayContainer}>
+                                    <Text style={styles.infoValue}>{userData.name}</Text>
                                     <TouchableOpacity
-                                        style={[styles.button, styles.saveButton]}
-                                        onPress={handleSaveName}
-                                        disabled={isLoading || !editedName.trim()}
+                                        style={[styles.button, styles.editButton]}
+                                        onPress={() => setIsEditing(true)}
                                     >
-                                        <Text style={styles.buttonText}>Save</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={[styles.button, styles.cancelButton]}
-                                        onPress={handleCancelEdit}
-                                        disabled={isLoading}
-                                    >
-                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        <Text style={styles.buttonText}>Edit</Text>
                                     </TouchableOpacity>
                                 </View>
-                            </View>
-                        ) : (
-                            <View style={styles.displayContainer}>
-                                <Text style={styles.value}>{userData.name}</Text>
-                                <TouchableOpacity
-                                    style={[styles.button, styles.editButton]}
-                                    onPress={() => setIsEditing(true)}
-                                >
-                                    <Text style={styles.buttonText}>Edit</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                            )}
+                        </View>
+                        {/* Other Profile Info */}
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.infoLabel}>Mommy Level:</Text>
+                            <Text style={styles.infoValue}>{userData.mommy_lvl}</Text>
+                        </View>
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.infoLabel}>AI Personality:</Text>
+                            <Text style={styles.infoValue}>{userData.ai_personality || 0}</Text>
+                        </View>
+                        <View style={styles.fieldContainer}>
+                            <Text style={styles.infoLabel}>Number:</Text>
+                            <Text style={styles.infoValue}>{userData.number}</Text>
+                        </View>
+                        {/* Logout Button */}
+                        <TouchableOpacity
+                            style={[styles.button, styles.logoutButton]}
+                            onPress={handleLogOut}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.logoutButtonText}>
+                                {isLoading ? "Logging Out..." : "Log Out"}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-
-                    {/* Other Profile Info */}
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Mommy Level</Text>
-                        <Text style={styles.value}>{userData.mommy_lvl}</Text>
-                    </View>
-
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>AI Personality</Text>
-                        <Text style={styles.value}>{userData.ai_personality || 0}</Text>
-                    </View>
-
-                    <View style={styles.fieldContainer}>
-                        <Text style={styles.label}>Number</Text>
-                        <Text style={styles.value}>{userData.number}</Text>
-                    </View>
-
-                    {/* Logout Button */}
-                    <TouchableOpacity
-                        style={[styles.button, styles.logoutButton]}
-                        onPress={handleLogOut}
-                        disabled={isLoading}
-                    >
-                        <Text style={styles.logoutButtonText}>
-                            {isLoading ? "Logging Out..." : "Log Out"}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <Text style={styles.noDataText}>No data fetched</Text>
-            )}
+                ) : (
+                    <Text style={styles.noData}>No data fetched</Text>
+                )}
+            </View>
         </View>
     );
 }
@@ -193,29 +195,54 @@ export default function Index() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8fafc',
-        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingTop: 40,
+        backgroundColor: '#ffe6f0', // beautiful pink
+    },
+    card: {
+        width: '90%',
+        backgroundColor: '#fff0f6', // light pink
+        borderRadius: 18,
+        padding: 22,
+        shadowColor: '#e75480', // dark pink
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+        elevation: 5,
+        marginBottom: 28,
+        borderWidth: 1,
+        borderColor: '#f7eaff', // purple accent
     },
     title: {
-        fontSize: 28,
+        fontSize: 30,
         fontWeight: 'bold',
-        color: '#2563eb',
+        color: '#e75480', // dark pink
+        marginBottom: 4,
         textAlign: 'center',
-        marginBottom: 30,
-        marginTop: 20,
+        textShadowColor: '#f7eaff', // purple accent
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
-    profileContainer: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+    infoGroup: {
+        marginTop: 8,
+    },
+    infoLabel: {
+        fontSize: 16,
+        color: '#e75480', // dark pink
+        marginTop: 10,
+        fontWeight: '600',
+    },
+    infoValue: {
+        fontSize: 18,
+        color: '#a259c2', // purple
+        fontWeight: '500',
+    },
+    noData: {
+        fontSize: 16,
+        color: '#c00',
+        textAlign: 'center',
+        marginTop: 12,
     },
     fieldContainer: {
         marginBottom: 20,

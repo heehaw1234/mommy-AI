@@ -1,4 +1,4 @@
-import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Modal, Platform, StatusBar, ActivityIndicator } from "react-native";
+import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Modal, Platform, StatusBar, ActivityIndicator, Image } from "react-native";
 import { useState, useCallback, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
 import { styles, calendarTheme } from "./styles/thirdStyles";
@@ -24,6 +24,27 @@ import { PickerField } from './components/common/PickerField';
 // Import context
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
+
+const mommyCardStyle = {
+  backgroundColor: '#fff0f6', // light pink
+  borderRadius: 18,
+  padding: 22,
+  shadowColor: '#e75480', // dark pink
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  elevation: 5,
+  marginBottom: 28,
+  borderWidth: 1,
+  borderColor: '#f7eaff', // purple accent
+};
+const mommyContainerStyle = {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  paddingTop: 40,
+  backgroundColor: '#ffe6f0', // beautiful pink
+};
 
 export default function CalendarScreen() {
     // Get today's date in YYYY-MM-DD
@@ -286,11 +307,11 @@ export default function CalendarScreen() {
     return (
         <SafeAreaView style={layoutStyles.safeArea}>
             <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
-            <ScrollView contentContainerStyle={[styles.container, { padding: 0 }]}>
+            <ScrollView contentContainerStyle={[styles.container, { padding: 0, backgroundColor: '#ffe6f0' }]}>
                 {/* Header */}
-                <View style={layoutStyles.header}>
-                    <Text style={layoutStyles.headerTitle}>📅 My Calendar</Text>
-                    <Text style={layoutStyles.headerSubtitle}>Organize your events and tasks</Text>
+                <View style={{width: '100%', alignItems: 'center', marginBottom: 16}}>
+                    <Image source={require('../../assets/images/mom-baby-mother-nurturing-love-260nw-1873658500.webp')} style={{width: 80, height: 80, borderRadius: 20, marginBottom: 8, backgroundColor: '#fff0f6', shadowColor: '#e75480', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6}} resizeMode="contain" />
+                    <Text style={{fontSize: 28, fontWeight: 'bold', color: '#e75480', textShadowColor: '#f7eaff', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2}}>Calendar</Text>
                 </View>
 
                 {/* Today Button */}
