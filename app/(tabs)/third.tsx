@@ -285,7 +285,7 @@ export default function CalendarScreen() {
 
     return (
         <SafeAreaView style={layoutStyles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
+            <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
             <ScrollView contentContainerStyle={[styles.container, { padding: 0 }]}>
                 {/* Header */}
                 <View style={layoutStyles.header}>
@@ -303,7 +303,7 @@ export default function CalendarScreen() {
                             setShowViewTasksButton(true);
                             setCalendarKey(prev => prev + 1);
                         }}
-                        color="#4f8cff"
+                        color="#6366f1"
                         style={{ width: 140 }}
                         icon={<Ionicons name="today-outline" size={20} color="#fff" />}
                     />

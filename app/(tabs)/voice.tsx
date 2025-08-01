@@ -13,9 +13,11 @@ import {
     KeyboardAvoidingView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
 import ultraSimpleAI from '@/app/utils/ultraSimpleAI';
+import { formatDate, formatTime } from '@/app/utils/dateUtils';
 
 // Web Speech API types for TypeScript
 declare global {
@@ -55,6 +57,203 @@ export default function VoicePage() {
     const [showTextInput, setShowTextInput] = useState(Platform.OS !== 'web');
     const [taskPreview, setTaskPreview] = useState<TaskPreview | null>(null);
     const [showTaskEditor, setShowTaskEditor] = useState(false);
+    
+    // Date/Time picker states
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [pickerDateValue, setPickerDateValue] = useState(new Date());
+    const [pickerTimeValue, setPickerTimeValue] = useState(new Date());
+    const [errorMessage, setErrorMessage] = useState<string>('');
+
+    // Helper functions for date/time parsing
+    const parseTimeToDate = (timeString: string): Date => {
+        const today = new Date();
+        if (timeString && timeString !== 'no time specified') {
+            // Handle various time formats
+            let hours = 0, minutes = 0;
+            
+            // Remove extra spaces and convert to lowercase
+            const cleanTime = timeString.trim().toLowerCase().replace(/\s+/g, '');
+            
+            // Handle AM/PM format (12-hour)
+            const ampmMatch = cleanTime.match(/^(\d{1,2}):?(\d{0,2})\s*(am|pm)$/);
+            if (ampmMatch) {
+                hours = parseInt(ampmMatch[1]);
+                minutes = parseInt(ampmMatch[2] || '0');
+                const isPM = ampmMatch[3] === 'pm';
+                
+                if (hours === 12 && !isPM) hours = 0; // 12 AM = 0 hours
+                if (hours !== 12 && isPM) hours += 12; // PM hours (except 12 PM)
+            } else {
+                // Handle 24-hour format
+                const timeMatch = cleanTime.match(/^(\d{1,2}):?(\d{0,2})$/);
+                if (timeMatch) {
+                    hours = parseInt(timeMatch[1]);
+                    minutes = parseInt(timeMatch[2] || '0');
+                }
+            }
+            
+            if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+                today.setHours(hours, minutes, 0, 0);
+            }
+        }
+        return today;
+    };
+
+    const parseCustomDate = (dateString: string): Date => {
+        if (!dateString) return new Date();
+        
+        const today = new Date();
+        const cleanDate = dateString.toLowerCase().trim();
+        
+        // Handle relative dates
+        if (cleanDate === 'today') return today;
+        if (cleanDate === 'tomorrow') {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return tomorrow;
+        }
+        if (cleanDate === 'yesterday') {
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            return yesterday;
+        }
+        
+        // Handle day names (next monday, tuesday, etc.)
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        for (let i = 0; i < dayNames.length; i++) {
+            if (cleanDate.includes(dayNames[i])) {
+                const targetDay = i;
+                const currentDay = today.getDay();
+                let daysToAdd = targetDay - currentDay;
+                
+                if (cleanDate.includes('next') || daysToAdd <= 0) {
+                    daysToAdd += 7;
+                }
+                
+                const result = new Date(today);
+                result.setDate(result.getDate() + daysToAdd);
+                return result;
+            }
+        }
+        
+        // Try different date formats
+        let parsedDate = null;
+        
+        // YYYY-MM-DD
+        if (dateString.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+            parsedDate = new Date(dateString);
+        }
+        // DD-MM-YYYY or DD/MM/YYYY
+        else if (dateString.match(/^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/)) {
+            const parts = dateString.split(/[-/]/);
+            parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        }
+        // MM-DD-YYYY or MM/DD/YYYY (US format)
+        else if (dateString.match(/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/)) {
+            const parts = dateString.split(/[-/]/);
+            const year = parts[2].length === 2 ? 2000 + parseInt(parts[2]) : parseInt(parts[2]);
+            parsedDate = new Date(year, parseInt(parts[0]) - 1, parseInt(parts[1]));
+        }
+        // Try natural language parsing
+        else {
+            parsedDate = new Date(dateString);
+        }
+        
+        return parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : today;
+    };
+
+    const getCurrentTimeRounded = (): Date => {
+        const now = new Date();
+        const minutes = Math.ceil(now.getMinutes() / 15) * 15;
+        now.setMinutes(minutes, 0, 0);
+        return now;
+    };
+
+    const validateTime = (timeString: string): boolean => {
+        if (timeString === 'no time specified') return true;
+        
+        const cleanTime = timeString.trim().toLowerCase().replace(/\s+/g, '');
+        
+        // Check AM/PM format
+        if (cleanTime.match(/^(\d{1,2}):?(\d{0,2})\s*(am|pm)$/)) {
+            const match = cleanTime.match(/^(\d{1,2}):?(\d{0,2})\s*(am|pm)$/);
+            const hours = parseInt(match[1]);
+            const minutes = parseInt(match[2] || '0');
+            return hours >= 1 && hours <= 12 && minutes >= 0 && minutes <= 59;
+        }
+        
+        // Check 24-hour format
+        if (cleanTime.match(/^(\d{1,2}):?(\d{0,2})$/)) {
+            const match = cleanTime.match(/^(\d{1,2}):?(\d{0,2})$/);
+            const hours = parseInt(match[1]);
+            const minutes = parseInt(match[2] || '0');
+            return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+        }
+        
+        return false;
+    };
+
+    const validateDate = (dateString: string): boolean => {
+        if (dateString === 'today' || dateString === 'tomorrow' || dateString === 'yesterday') return true;
+        
+        const cleanDate = dateString.toLowerCase().trim();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        
+        // Check for day names
+        for (const day of dayNames) {
+            if (cleanDate.includes(day)) return true;
+        }
+        
+        // Check various date formats
+        if (dateString.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) return true;
+        if (dateString.match(/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/)) return true;
+        
+        // Try parsing as date
+        const parsed = new Date(dateString);
+        return !isNaN(parsed.getTime());
+    };
+
+    const openDatePicker = () => {
+        setErrorMessage('');
+        try {
+            if (taskPreview?.date && taskPreview.date !== 'today' && taskPreview.date !== 'tomorrow') {
+                if (!validateDate(taskPreview.date)) {
+                    setErrorMessage('Invalid date format. Please use YYYY-MM-DD format.');
+                    return;
+                }
+                const date = new Date(taskPreview.date);
+                if (isNaN(date.getTime())) {
+                    setErrorMessage('Invalid date. Please check the date value.');
+                    return;
+                }
+                setPickerDateValue(date);
+            } else {
+                setPickerDateValue(new Date());
+            }
+            setShowDatePicker(true);
+        } catch (error) {
+            setErrorMessage('Unable to parse date. Please check the date format.');
+        }
+    };
+
+    const openTimePicker = () => {
+        setErrorMessage('');
+        try {
+            if (taskPreview?.time && taskPreview.time !== 'no time specified') {
+                if (!validateTime(taskPreview.time)) {
+                    setErrorMessage('Invalid time format. Please use HH:MM format (24-hour).');
+                    return;
+                }
+                setPickerTimeValue(parseTimeToDate(taskPreview.time));
+            } else {
+                setPickerTimeValue(getCurrentTimeRounded());
+            }
+            setShowTimePicker(true);
+        } catch (error) {
+            setErrorMessage('Unable to parse time. Please check the time format.');
+        }
+    };
 
     // Initialize speech recognition
     useEffect(() => {
@@ -156,6 +355,7 @@ export default function VoicePage() {
         }
 
         setIsProcessing(true);
+        setErrorMessage('');
 
         try {
             console.log('🎤 Processing input for task creation:', inputText);
@@ -212,8 +412,27 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                     .replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
                 
                 taskData = JSON.parse(jsonString);
+                
+                // Validate the parsed data
+                const errors = [];
+                if (!taskData.title || typeof taskData.title !== 'string') {
+                    errors.push('Invalid or missing task title');
+                }
+                if (taskData.date && !validateDate(taskData.date)) {
+                    errors.push('Invalid date format in AI response');
+                    taskData.date = 'today'; // Fallback
+                }
+                if (taskData.time && !validateTime(taskData.time)) {
+                    errors.push('Invalid time format in AI response');
+                    taskData.time = 'no time specified'; // Fallback
+                }
+                
+                if (errors.length > 0) {
+                    setErrorMessage(`AI parsing issues: ${errors.join(', ')}. Please review and correct.`);
+                }
             } catch (parseError) {
                 console.error('Failed to parse AI response:', parseError);
+                setErrorMessage('Unable to parse AI response. Created basic task from your input.');
                 // Fallback: create a basic task
                 taskData = {
                     title: inputText.length > 50 ? inputText.substring(0, 50) + '...' : inputText,
@@ -304,11 +523,16 @@ If no specific date/time is mentioned, use reasonable defaults.`;
     const cancelTaskCreation = () => {
         setTaskPreview(null);
         setShowTaskEditor(false);
+        setErrorMessage('');
     };
 
     const updateTaskPreview = (field: keyof TaskPreview, value: string) => {
         if (taskPreview) {
             setTaskPreview({ ...taskPreview, [field]: value });
+            // Clear error message when user makes changes
+            if (errorMessage) {
+                setErrorMessage('');
+            }
         }
     };
 
@@ -317,6 +541,7 @@ If no specific date/time is mentioned, use reasonable defaults.`;
         setTextInput('');
         setTaskPreview(null);
         setShowTaskEditor(false);
+        setErrorMessage('');
     };
 
     return (
@@ -373,7 +598,7 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                                 style={styles.switchModeButton}
                                 onPress={() => setShowTextInput(true)}
                             >
-                                <Ionicons name="create-outline" size={20} color="#2563eb" />
+                                <Ionicons name="create-outline" size={20} color="#6366f1" />
                                 <Text style={styles.switchModeText}>Switch to typing</Text>
                             </TouchableOpacity>
                         </View>
@@ -407,7 +632,7 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                                         style={styles.switchModeButton}
                                         onPress={() => setShowTextInput(false)}
                                     >
-                                        <Ionicons name="mic-outline" size={20} color="#2563eb" />
+                                        <Ionicons name="mic-outline" size={20} color="#6366f1" />
                                         <Text style={styles.switchModeText}>Switch to voice</Text>
                                     </TouchableOpacity>
                                 )}
@@ -459,6 +684,14 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                             <Text style={styles.taskEditorTitle}>✨ Review Your Task</Text>
                             <Text style={styles.taskEditorSubtitle}>Edit the details before saving</Text>
                             
+                            {/* Error Message Display */}
+                            {errorMessage ? (
+                                <View style={styles.errorMessageContainer}>
+                                    <Ionicons name="warning" size={20} color="#ef4444" />
+                                    <Text style={styles.errorMessageText}>{errorMessage}</Text>
+                                </View>
+                            ) : null}
+                            
                             <View style={styles.taskEditForm}>
                                 <View style={styles.formGroup}>
                                     <Text style={styles.formLabel}>📝 Task Title</Text>
@@ -486,22 +719,40 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                                 <View style={styles.formRow}>
                                     <View style={[styles.formGroup, styles.formGroupHalf]}>
                                         <Text style={styles.formLabel}>📅 Date</Text>
-                                        <TextInput
-                                            style={styles.formInput}
-                                            value={taskPreview.date}
-                                            onChangeText={(text) => updateTaskPreview('date', text)}
-                                            placeholder="YYYY-MM-DD"
-                                        />
+                                        <TouchableOpacity 
+                                            style={styles.dateTimeButton}
+                                            onPress={openDatePicker}
+                                        >
+                                            <Text style={styles.dateTimeButtonText}>
+                                                {taskPreview.date === 'today' ? 'Today' :
+                                                 taskPreview.date === 'tomorrow' ? 'Tomorrow' :
+                                                 taskPreview.date}
+                                            </Text>
+                                            <Ionicons name="calendar" size={20} color="#6b7280" />
+                                        </TouchableOpacity>
                                     </View>
 
                                     <View style={[styles.formGroup, styles.formGroupHalf]}>
                                         <Text style={styles.formLabel}>⏰ Time</Text>
-                                        <TextInput
-                                            style={styles.formInput}
-                                            value={taskPreview.time}
-                                            onChangeText={(text) => updateTaskPreview('time', text)}
-                                            placeholder="HH:MM or leave empty"
-                                        />
+                                        <TouchableOpacity 
+                                            style={styles.dateTimeButton}
+                                            onPress={openTimePicker}
+                                        >
+                                            <Text style={styles.dateTimeButtonText}>
+                                                {taskPreview.time === 'no time specified' ? 'No time' : taskPreview.time}
+                                            </Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                {taskPreview.time !== 'no time specified' && (
+                                                    <TouchableOpacity 
+                                                        onPress={() => updateTaskPreview('time', 'no time specified')}
+                                                        style={{ padding: 4 }}
+                                                    >
+                                                        <Ionicons name="close" size={16} color="#ef4444" />
+                                                    </TouchableOpacity>
+                                                )}
+                                                <Ionicons name="time" size={20} color="#6b7280" />
+                                            </View>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
 
@@ -523,6 +774,111 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                                 </View>
                             </View>
                         </View>
+                    )}
+
+                    {/* Date Picker */}
+                    {showDatePicker && (
+                        <TouchableOpacity 
+                            style={styles.modalOverlay}
+                            activeOpacity={1}
+                            onPress={() => setShowDatePicker(false)}
+                        >
+                            <TouchableOpacity 
+                                style={styles.centeredPickerContainer}
+                                activeOpacity={1}
+                                onPress={(e) => e.stopPropagation()}
+                            >
+                                <View style={styles.pickerHeader}>
+                                    <Text style={styles.pickerHeaderText}>Select Date</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                        <Ionicons name="close" size={24} color="#6b7280" />
+                                    </TouchableOpacity>
+                                </View>
+                                <DateTimePicker
+                                    value={pickerDateValue}
+                                    mode="date"
+                                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                                    onChange={(event, date) => {
+                                        if (Platform.OS === "android") {
+                                            setShowDatePicker(false);
+                                        }
+                                        if (event.type === "set" && date && taskPreview) {
+                                            updateTaskPreview('date', formatDate(date));
+                                            setPickerDateValue(date);
+                                            if (Platform.OS === "ios") {
+                                                setShowDatePicker(false);
+                                            }
+                                        }
+                                    }}
+                                    textColor={Platform.OS === "ios" ? "#222" : undefined}
+                                    style={styles.centeredDateTimePicker}
+                                    minimumDate={new Date()}
+                                />
+                                {Platform.OS === "ios" && (
+                                    <View style={styles.pickerFooter}>
+                                        <TouchableOpacity 
+                                            onPress={() => setShowDatePicker(false)} 
+                                            style={styles.pickerButton}
+                                        >
+                                            <Text style={styles.pickerButtonText}>Done</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Time Picker */}
+                    {showTimePicker && (
+                        <TouchableOpacity 
+                            style={styles.modalOverlay}
+                            activeOpacity={1}
+                            onPress={() => setShowTimePicker(false)}
+                        >
+                            <TouchableOpacity 
+                                style={styles.centeredPickerContainer}
+                                activeOpacity={1}
+                                onPress={(e) => e.stopPropagation()}
+                            >
+                                <View style={styles.pickerHeader}>
+                                    <Text style={styles.pickerHeaderText}>Select Time</Text>
+                                    <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                                        <Ionicons name="close" size={24} color="#6b7280" />
+                                    </TouchableOpacity>
+                                </View>
+                                <DateTimePicker
+                                    value={pickerTimeValue}
+                                    mode="time"
+                                    is24Hour={false}
+                                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                                    onChange={(event, date) => {
+                                        if (Platform.OS === "android") {
+                                            setShowTimePicker(false);
+                                        }
+                                        if (event.type === "set" && date && taskPreview) {
+                                            updateTaskPreview('time', formatTime(date));
+                                            setPickerTimeValue(date);
+                                            if (Platform.OS === "ios") {
+                                                setShowTimePicker(false);
+                                            }
+                                        }
+                                    }}
+                                    textColor={Platform.OS === "ios" ? "#222" : undefined}
+                                    style={styles.centeredDateTimePicker}
+                                    minuteInterval={15}
+                                />
+                                {Platform.OS === "ios" && (
+                                    <View style={styles.pickerFooter}>
+                                        <TouchableOpacity 
+                                            onPress={() => setShowTimePicker(false)} 
+                                            style={styles.pickerButton}
+                                        >
+                                            <Text style={styles.pickerButtonText}>Done</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        </TouchableOpacity>
                     )}
 
                     {/* Instructions */}
@@ -559,21 +915,21 @@ If no specific date/time is mentioned, use reasonable defaults.`;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f8fd',
+        backgroundColor: '#f8fafc',
     },
     header: {
-        backgroundColor: '#2563eb',
+        backgroundColor: '#6366f1',
         borderBottomLeftRadius: 32,
         borderBottomRightRadius: 32,
         paddingTop: 36,
         paddingBottom: 24,
         paddingHorizontal: 24,
         marginBottom: 16,
-        shadowColor: '#2563eb',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.22,
-        shadowRadius: 14,
-        elevation: 8,
+        shadowColor: '#6366f1',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 10,
     },
     headerTitle: {
         fontSize: 32,
@@ -585,7 +941,7 @@ const styles = StyleSheet.create({
     },
     headerSubtitle: {
         fontSize: 16,
-        color: '#e0e7ff',
+        color: '#c7d2fe',
         textAlign: 'center',
     },
     content: {
@@ -930,6 +1286,130 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     saveButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    // Date/Time picker button styles
+    dateTimeButton: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        padding: 12,
+        backgroundColor: '#fff',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        minHeight: 48,
+    },
+    dateTimeButtonText: {
+        fontSize: 16,
+        color: '#1f2937',
+    },
+    // DateTimePicker styles
+    dateTimePickerContainer: {
+        width: "100%",
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        overflow: "hidden",
+        marginBottom: 14,
+    },
+    dateTimePickerStyle: {
+        backgroundColor: "#fff",
+        width: "100%",
+    },
+    dateTimePickerIOSStyle: {
+        backgroundColor: "#fff",
+        width: "100%",
+        height: 200,
+    },
+    dateTimePickerControls: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        padding: 10,
+        backgroundColor: "#f8f9fa",
+    },
+    dateTimePickerButton: {
+        padding: 10,
+    },
+    dateTimePickerCancelText: {
+        color: "#6b7280",
+        fontWeight: "600",
+    },
+    // Error message styles
+    errorMessageContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fef2f2',
+        borderColor: '#fecaca',
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 16,
+        gap: 8,
+    },
+    errorMessageText: {
+        flex: 1,
+        color: '#dc2626',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    // Centered modal picker styles
+    modalOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    centeredPickerContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        margin: 20,
+        minWidth: 300,
+        maxWidth: 400,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    pickerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    pickerHeaderText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1f2937',
+    },
+    centeredDateTimePicker: {
+        width: '100%',
+        backgroundColor: '#fff',
+    },
+    pickerFooter: {
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+        alignItems: 'center',
+    },
+    pickerButton: {
+        backgroundColor: '#2563eb',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+        minWidth: 80,
+        alignItems: 'center',
+    },
+    pickerButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',

@@ -4,23 +4,23 @@ export const layoutStyles = StyleSheet.create({
   // Main Container
   safeArea: {
     flex: 1,
-    backgroundColor: "#f5f8fd",
+    backgroundColor: "#f8fafc",
   },
 
   // Header
   header: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#6366f1",
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     paddingTop: 36,
     paddingBottom: 24,
     paddingHorizontal: 24,
     marginBottom: 16,
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-    elevation: 8,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
 
   headerTitle: {
@@ -34,7 +34,7 @@ export const layoutStyles = StyleSheet.create({
 
   headerSubtitle: {
     fontSize: 16,
-    color: "#e0e7ff",
+    color: "#c7d2fe",
     textAlign: "center",
     marginBottom: 0,
   },
@@ -52,11 +52,11 @@ export const layoutStyles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: "#fff",
-    shadowColor: "#2563eb",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
 
   calendarStyle: {

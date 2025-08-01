@@ -16,6 +16,7 @@ import Slider from "@react-native-community/slider";
 import UltraSimpleAI from '../utils/ultraSimpleAI';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from "@/lib/supabase";
+import { MotivationCoach, StressLevel, LearningStyle } from '../utils/motivationCoach';
 
 // Personality constants
 const MOMMY_EMOJIS = [
@@ -75,7 +76,7 @@ export default function ChatbotScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! 👋 I\'m your AI assistant. How can I help you today?',
+      text: 'Hello! 👋 I\'m your AI study buddy. How can I help you today?',
       isUser: false,
       timestamp: new Date(),
     },
@@ -91,7 +92,33 @@ export default function ChatbotScreen() {
   const [currentMommyLevel, setCurrentMommyLevel] = useState(0);
   const [currentPersonality, setCurrentPersonality] = useState(0);
 
-  // Load personality settings
+  // Motivation Coach state
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [motivationalMessage, setMotivationalMessage] = useState('');
+  const [adaptivePersonalityEnabled, setAdaptivePersonalityEnabled] = useState(true);
+
+  // Helper functions for stress level display
+  const getStressLevelEmoji = (level: StressLevel): string => {
+    switch (level) {
+      case StressLevel.LOW: return '😌';
+      case StressLevel.MODERATE: return '😐';
+      case StressLevel.HIGH: return '😰';
+      case StressLevel.CRITICAL: return '🚨';
+      default: return '😐';
+    }
+  };
+
+  const getStressLevelText = (level: StressLevel): string => {
+    switch (level) {
+      case StressLevel.LOW: return 'Calm';
+      case StressLevel.MODERATE: return 'Moderate';
+      case StressLevel.HIGH: return 'High Stress';
+      case StressLevel.CRITICAL: return 'Crisis Mode';
+      default: return 'Moderate';
+    }
+  };
+
+  // Load personality settings and student profile
   useEffect(() => {
     const loadPersonalitySettings = async () => {
       if (!session?.user?.id) return;
@@ -120,8 +147,49 @@ export default function ChatbotScreen() {
       }
     };
 
+    const loadStudentProfile = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        // Update student profile based on recent activity
+        const profile = await MotivationCoach.updateStudentProfile(session.user.id);
+        
+        if (profile) {
+          setStudentProfile(profile);
+          
+          // Get motivational message
+          const message = MotivationCoach.getMotivationalMessage(profile);
+          setMotivationalMessage(message);
+          
+          // Apply adaptive personality if enabled
+          if (adaptivePersonalityEnabled) {
+            const adaptiveSettings = MotivationCoach.getAdaptivePersonality(profile);
+            setCurrentMommyLevel(adaptiveSettings.mommyLevel);
+            setCurrentPersonality(adaptiveSettings.personalityType);
+            
+            // Update in database
+            await supabase
+              .from("Profiles")
+              .update({ 
+                mommy_lvl: adaptiveSettings.mommyLevel,
+                ai_personality: adaptiveSettings.personalityType 
+              })
+              .eq("id", session.user.id);
+          }
+        }
+      } catch (error) {
+        console.log("Error loading student profile:", error);
+      }
+    };
+
     loadPersonalitySettings();
-  }, [session]);
+    loadStudentProfile();
+    
+    // Set up periodic profile updates (every 5 minutes)
+    const interval = setInterval(loadStudentProfile, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [session, adaptivePersonalityEnabled]);
 
   const handlePersonalityChange = async () => {
     if (!session?.user?.id) return;
@@ -233,17 +301,32 @@ export default function ChatbotScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>AI Assistant</Text>
-          <Text style={styles.headerSubtitle}>Powered by Llama</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.personalityButton}
-          onPress={openPersonalityModal}
-        >
-          <Text style={styles.personalityButtonText}>
-            {PERSONALITY_EMOJIS[currentPersonality]} {MOMMY_LABELS[currentMommyLevel]}
+          <Text style={styles.headerTitle}>AI Study Buddy</Text>
+          <Text style={styles.headerSubtitle}>
+            {studentProfile ? 
+              `${getStressLevelEmoji(studentProfile.stressLevel)} ${getStressLevelText(studentProfile.stressLevel)} • Motivation: ${studentProfile.currentMotivationLevel}/10` 
+              : 'Powered by Llama'
+            }
           </Text>
-        </TouchableOpacity>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={[styles.personalityButton, adaptivePersonalityEnabled && styles.adaptiveActive]}
+            onPress={openPersonalityModal}
+          >
+            <Text style={styles.personalityButtonText}>
+              {PERSONALITY_EMOJIS[currentPersonality]} {MOMMY_LABELS[currentMommyLevel]}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.adaptiveToggle}
+            onPress={() => setAdaptivePersonalityEnabled(!adaptivePersonalityEnabled)}
+          >
+            <Text style={styles.adaptiveToggleText}>
+              {adaptivePersonalityEnabled ? '🤖 Auto' : '👤 Manual'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -255,6 +338,15 @@ export default function ChatbotScreen() {
           style={styles.messagesContainer}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
+          {/* Motivational Message */}
+          {motivationalMessage && (
+            <View style={styles.motivationalMessageContainer}>
+              <Text style={styles.motivationalMessageText}>
+                💡 {motivationalMessage}
+              </Text>
+            </View>
+          )}
+          
           {messages.map(renderMessage)}
           {isLoading && (
             <View style={[styles.messageContainer, styles.botMessage]}>
@@ -302,6 +394,55 @@ export default function ChatbotScreen() {
           </View>
 
           <ScrollView style={styles.modalContent}>
+            {/* Adaptive Coaching Status */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>🤖 Adaptive Coaching</Text>
+              <Text style={styles.sectionDescription}>
+                {adaptivePersonalityEnabled 
+                  ? "AI automatically adjusts based on your stress level and learning style"
+                  : "Manual personality control - AI won't change automatically"
+                }
+              </Text>
+              
+              {studentProfile && (
+                <View style={styles.profileStats}>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Stress Level:</Text>
+                    <Text style={styles.statValue}>
+                      {getStressLevelEmoji(studentProfile.stressLevel)} {getStressLevelText(studentProfile.stressLevel)}
+                    </Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Learning Style:</Text>
+                    <Text style={styles.statValue}>
+                      {studentProfile.learningStyle.charAt(0).toUpperCase() + studentProfile.learningStyle.slice(1)}
+                    </Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Motivation:</Text>
+                    <Text style={styles.statValue}>
+                      {studentProfile.currentMotivationLevel}/10
+                    </Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statLabel}>Completion Rate:</Text>
+                    <Text style={styles.statValue}>
+                      {Math.round((studentProfile.learningPattern?.completionRate || 0) * 100)}%
+                    </Text>
+                  </View>
+                </View>
+              )}
+              
+              <TouchableOpacity 
+                style={[styles.toggleButton, adaptivePersonalityEnabled && styles.toggleButtonActive]}
+                onPress={() => setAdaptivePersonalityEnabled(!adaptivePersonalityEnabled)}
+              >
+                <Text style={[styles.toggleButtonText, adaptivePersonalityEnabled && styles.toggleButtonTextActive]}>
+                  {adaptivePersonalityEnabled ? '🤖 Adaptive Mode ON' : '👤 Manual Mode'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Fierceness Level Section */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>🔥 Fierceness Level</Text>
@@ -409,17 +550,27 @@ export default function ChatbotScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
   },
   header: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#6366f1',
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headerLeft: {
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
   },
   headerTitle: {
     fontSize: 20,
@@ -439,6 +590,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
+  adaptiveActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  adaptiveToggle: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  adaptiveToggleText: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
   personalityButtonText: {
     fontSize: 12,
     fontWeight: '600',
@@ -450,6 +618,20 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     padding: 16,
+  },
+  motivationalMessageContainer: {
+    backgroundColor: '#fff3cd',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 8,
+  },
+  motivationalMessageText: {
+    fontSize: 14,
+    color: '#856404',
+    fontStyle: 'italic',
+    lineHeight: 20,
   },
   messageContainer: {
     marginVertical: 4,
@@ -637,5 +819,50 @@ const styles = StyleSheet.create({
   levelLabelSelectedBlue: {
     color: '#4a90e2',
     fontWeight: 'bold',
+  },
+  // Motivation Coach styles
+  profileStats: {
+    marginVertical: 12,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  statItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  statValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  toggleButton: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  toggleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+  },
+  toggleButtonTextActive: {
+    color: 'white',
   },
 });
