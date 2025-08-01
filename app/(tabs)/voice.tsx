@@ -41,8 +41,6 @@ interface TaskPreview {
     description: string;
     date: string;
     time: string;
-    category: string;
-    priority: string;
 }
 
 export default function VoicePage() {
@@ -162,17 +160,18 @@ export default function VoicePage() {
         try {
             console.log('🎤 Processing input for task creation:', inputText);
             
-            // Use AI to extract task information
+            // Use AI to extract task information with a cleaner prompt
             const taskExtractionPrompt = `Extract task information from this text: "${inputText}"
-            
-Please respond with ONLY a JSON object in this exact format:
+
+IMPORTANT: Respond with ONLY valid JSON, no comments, no extra text, no emojis.
+If the content is inappropriate, still extract what you can for task management purposes.
+
+Format:
 {
   "title": "brief task title",
   "description": "detailed description", 
   "date": "YYYY-MM-DD or 'today' or 'tomorrow'",
-  "time": "HH:MM or 'no time specified'",
-  "category": "work/personal/shopping/health/other",
-  "priority": "low/medium/high"
+  "time": "HH:MM or 'no time specified'"
 }
 
 If no specific date/time is mentioned, use reasonable defaults.`;
@@ -180,15 +179,39 @@ If no specific date/time is mentioned, use reasonable defaults.`;
             const aiResponse = await ultraSimpleAI.generateResponse(taskExtractionPrompt, session?.user?.id);
             console.log('🤖 AI Extraction Response:', aiResponse);
             
+            // Check if AI refused the request
+            if (aiResponse.toLowerCase().includes("can't fulfill") || 
+                aiResponse.toLowerCase().includes("cannot fulfill") ||
+                aiResponse.toLowerCase().includes("inappropriate")) {
+                // Create a simple task from the input text
+                const taskData: TaskPreview = {
+                    title: inputText.length > 50 ? inputText.substring(0, 50) + '...' : inputText,
+                    description: inputText,
+                    date: 'today',
+                    time: 'no time specified'
+                };
+                setTaskPreview(taskData);
+                setShowTaskEditor(true);
+                return;
+            }
+            
             // Try to parse the JSON response
             let taskData: TaskPreview;
             try {
-                // Clean the response to extract JSON
-                const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) {
+                // Clean the response to extract and fix JSON
+                let jsonString = aiResponse.match(/\{[\s\S]*\}/)?.[0];
+                if (!jsonString) {
                     throw new Error('No JSON found in response');
                 }
-                taskData = JSON.parse(jsonMatch[0]);
+                
+                // Remove JavaScript-style comments that break JSON parsing
+                jsonString = jsonString
+                    .replace(/\/\/[^\r\n]*/g, '') // Remove // comments
+                    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
+                    .replace(/,\s*}/g, '}') // Remove trailing commas
+                    .replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+                
+                taskData = JSON.parse(jsonString);
             } catch (parseError) {
                 console.error('Failed to parse AI response:', parseError);
                 // Fallback: create a basic task
@@ -196,9 +219,7 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                     title: inputText.length > 50 ? inputText.substring(0, 50) + '...' : inputText,
                     description: inputText,
                     date: 'today',
-                    time: 'no time specified',
-                    category: 'other',
-                    priority: 'medium'
+                    time: 'no time specified'
                 };
             }
 
@@ -214,23 +235,48 @@ If no specific date/time is mentioned, use reasonable defaults.`;
         }
     };
 
+    const parseTaskDate = (dateString: string): string => {
+        const today = new Date();
+        
+        if (dateString === 'today') {
+            return today.toISOString().split('T')[0];
+        }
+        
+        if (dateString === 'tomorrow') {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return tomorrow.toISOString().split('T')[0];
+        }
+        
+        // Handle relative dates like "next monday"
+        if (dateString.includes('next')) {
+            const nextWeek = new Date(today);
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            return nextWeek.toISOString().split('T')[0];
+        }
+        
+        // If it's already a valid date format, return as is
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString;
+        }
+        
+        // Default to today if we can't parse
+        return today.toISOString().split('T')[0];
+    };
+
     const saveTask = async () => {
         if (!taskPreview) return;
 
         try {
             console.log('💾 Saving task:', taskPreview);
             
-            // Convert preview data to task format
+            // Convert preview data to task format with better date parsing
             const task = {
                 text: taskPreview.title,
                 description: taskPreview.description,
                 time: taskPreview.time === 'no time specified' ? '' : taskPreview.time,
-                date: taskPreview.date === 'today' ? new Date().toISOString().split('T')[0] : 
-                      taskPreview.date === 'tomorrow' ? new Date(Date.now() + 86400000).toISOString().split('T')[0] :
-                      taskPreview.date,
-                completed: false,
-                category: taskPreview.category,
-                priority: taskPreview.priority
+                date: parseTaskDate(taskPreview.date),
+                completed: false
             };
 
             const savedTask = await addTaskToState(task);
@@ -455,28 +501,6 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                                             value={taskPreview.time}
                                             onChangeText={(text) => updateTaskPreview('time', text)}
                                             placeholder="HH:MM or leave empty"
-                                        />
-                                    </View>
-                                </View>
-
-                                <View style={styles.formRow}>
-                                    <View style={[styles.formGroup, styles.formGroupHalf]}>
-                                        <Text style={styles.formLabel}>🏷️ Category</Text>
-                                        <TextInput
-                                            style={styles.formInput}
-                                            value={taskPreview.category}
-                                            onChangeText={(text) => updateTaskPreview('category', text)}
-                                            placeholder="work/personal/other"
-                                        />
-                                    </View>
-
-                                    <View style={[styles.formGroup, styles.formGroupHalf]}>
-                                        <Text style={styles.formLabel}>⚡ Priority</Text>
-                                        <TextInput
-                                            style={styles.formInput}
-                                            value={taskPreview.priority}
-                                            onChangeText={(text) => updateTaskPreview('priority', text)}
-                                            placeholder="low/medium/high"
                                         />
                                     </View>
                                 </View>
