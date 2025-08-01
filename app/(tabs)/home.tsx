@@ -1,13 +1,15 @@
-import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from "react-native";
+import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, StatusBar } from "react-native";
 import { useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAppContext } from "@/contexts/AppContext";
 import { useTaskContext } from "@/contexts/TaskContext";
+import { useMommyLevel } from "@/contexts/MommyLevelContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from 'react-native-chart-kit';
+import { StandardHeader } from '../components/StandardHeader';
 
 type UserData = {
     id: string;
@@ -70,6 +72,7 @@ export default function Index() {
     
     const { session } = useAppContext();
     const { tasksList: tasks } = useTaskContext();
+    const { mommyLevel } = useMommyLevel();
 
     // Calculate completion rate
     const completionRate = studyStats.totalTasks > 0 ? Math.round((studyStats.completedTasks / studyStats.totalTasks) * 100) : 0;
@@ -488,18 +491,38 @@ export default function Index() {
 
     return (
         <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
-                <View style={styles.header}>
-                    <View style={styles.headerContent}>
-                        <Ionicons name="school" size={32} color="#fff" />
-                        <Text style={styles.headerTitle}>Study Dashboard</Text>
-                        <Text style={styles.headerSubtitle}>Level up your learning! 🚀</Text>
-                    </View>
-                </View>
+                <StandardHeader
+                    title="Study Dashboard"
+                    subtitle="Level up your learning! 🚀"
+                    icon="school"
+                    backgroundColor="#4f46e5"
+                    rightComponent={
+                        <View style={{
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 20,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}>
+                            <Ionicons 
+                                name={mommyLevel <= 2 ? "heart" : mommyLevel <= 4 ? "happy" : mommyLevel <= 6 ? "business" : "flash"} 
+                                size={14} 
+                                color="#fff" 
+                                style={{ marginRight: 4 }}
+                            />
+                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                                Mommy Lvl {mommyLevel}
+                            </Text>
+                        </View>
+                    }
+                />
 
                 {/* XP and Level Progress */}
-                <View style={styles.xpCard}>
+                <View style={[styles.xpCard, { marginTop: 24 }]}>
                     <View style={styles.levelBadge}>
                         <Text style={styles.levelText}>LVL {studyStats.level}</Text>
                     </View>

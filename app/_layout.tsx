@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Slot, Redirect, useRouter, useSegments } from "expo-router";
 import { AppProvider, useAppContext } from "@/contexts/AppContext";
 import { TaskProvider } from "@/contexts/TaskContext";
+import { MommyLevelProvider } from "@/contexts/MommyLevelContext";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 
 function AuthChecker() {
@@ -48,7 +49,9 @@ function AuthChecker() {
     }
 
     console.log('🎯 AuthChecker: Rendering current route');
-    return <Slot />;
+    return (
+        <Slot />
+    );
 }
 
 export default function RootLayout() {
@@ -57,7 +60,9 @@ export default function RootLayout() {
     return (
         <AppProvider>
             <TaskProvider>
-                <AuthChecker />
+                <MommyLevelProvider>
+                    <AuthChecker />
+                </MommyLevelProvider>
             </TaskProvider>
         </AppProvider>
     );

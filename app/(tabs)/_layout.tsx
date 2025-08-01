@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Dimensions, Animated } from "react-native
 import { Ionicons } from '@expo/vector-icons';
 import PagerView from 'react-native-pager-view';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useNotifications } from '@/app/utils/useNotifications';
 
 // Import your screen components
 import HomeScreen from './home';
@@ -57,8 +56,6 @@ export default function TabLayout() {
         // Optional: Add smooth transitions during scroll
         // You can add animation logic here if needed
     };
-
-    useNotifications();
     
     return (
         <SafeAreaProvider>

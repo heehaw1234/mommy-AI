@@ -5,6 +5,8 @@ import { useCallback } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from "@/lib/supabase";
 import { useAppContext } from "@/contexts/AppContext";
+import { StandardHeader } from '../components/StandardHeader';
+import { useMommyLevel } from '@/contexts/MommyLevelContext';
 
 type UserData = {
     id: string;
@@ -20,6 +22,45 @@ export default function Index() {
     const [isEditing, setIsEditing] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const { session } = useAppContext();
+    const { mommyLevel } = useMommyLevel();
+
+    // Set up real-time subscription for profile changes
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        console.log('🔄 Setting up real-time subscription for profile changes');
+        
+        // Subscribe to changes in the Profiles table for current user
+        const profileSubscription = supabase
+            .channel('profile-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+                    schema: 'public',
+                    table: 'Profiles',
+                    filter: `id=eq.${session.user.id}` // Only listen to changes for current user
+                },
+                (payload) => {
+                    console.log('📊 Profile data changed:', payload);
+                    
+                    if (payload.eventType === 'UPDATE' && payload.new) {
+                        // Update local state with new data
+                        const newData = payload.new as UserData;
+                        setUserData(newData);
+                        setEditedName(newData.name);
+                        console.log('✅ Profile state updated in real-time:', newData);
+                    }
+                }
+            )
+            .subscribe();
+
+        // Cleanup subscription on unmount
+        return () => {
+            console.log('🧹 Cleaning up profile subscription');
+            supabase.removeChannel(profileSubscription);
+        };
+    }, [session?.user?.id]);
 
     const handleLogOut = async () => {
         Alert.alert(
@@ -82,6 +123,7 @@ export default function Index() {
         if (!session?.user?.id) return;
 
         try {
+            console.log('🔄 Fetching initial profile data');
             const { data, error } = await supabase
                 .from("Profiles")
                 .select("*")
@@ -91,9 +133,9 @@ export default function Index() {
             if (error) throw error;
             setUserData(data);
             setEditedName(data.name);
-            console.log("🏠 Home refreshed user data:", data);
+            console.log("🏠 Profile data fetched:", data);
         } catch (error) {
-            console.log("Error fetching userData:", error);
+            console.log("❌ Error fetching userData:", error);
         }
     }, [session]);
 
@@ -111,16 +153,35 @@ export default function Index() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 {/* Header */}
-                <View style={styles.header}>
-                    <View style={styles.headerContent}>
-                        <Ionicons name="person-circle" size={60} color="#ffffff" />
-                        <Text style={styles.title}>Profile</Text>
-                        <Text style={styles.subtitle}>Manage your account settings</Text>
-                    </View>
-                </View>
+                <StandardHeader
+                    title="Profile"
+                    subtitle="Manage your account settings"
+                    icon="person-circle"
+                    backgroundColor="#4f46e5"
+                    rightComponent={
+                        <View style={{
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            paddingHorizontal: 12,
+                            paddingVertical: 6,
+                            borderRadius: 20,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}>
+                            <Ionicons 
+                                name={mommyLevel <= 2 ? "heart" : mommyLevel <= 4 ? "happy" : mommyLevel <= 6 ? "business" : "flash"} 
+                                size={14} 
+                                color="#fff" 
+                                style={{ marginRight: 4 }}
+                            />
+                            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                                Mommy Lvl {mommyLevel}
+                            </Text>
+                        </View>
+                    }
+                />
 
                 {userData ? (
                     <View style={styles.profileContainer}>
@@ -232,7 +293,7 @@ export default function Index() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#6366f1',
+        backgroundColor: '#f1f5f9',
     },
     container: {
         flex: 1,

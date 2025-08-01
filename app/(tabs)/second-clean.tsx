@@ -453,7 +453,7 @@ export default function TodoListScreen() {
 
     return (
         <SafeAreaView style={layoutStyles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
+            <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
             
             <ScrollView style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
                 {/* Header */}
@@ -461,7 +461,6 @@ export default function TodoListScreen() {
                     title="Task Manager"
                     subtitle="Stay organized and productive"
                     icon="checkmark-circle-outline"
-                    backgroundColor="#4f46e5"
                     rightComponent={
                         <View style={{
                             backgroundColor: 'rgba(255,255,255,0.2)',

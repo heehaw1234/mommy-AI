@@ -10,14 +10,17 @@ import {
     StyleSheet,
     Platform,
     TextInput,
-    KeyboardAvoidingView
+    KeyboardAvoidingView,
+    StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
+import { useMommyLevel } from '@/contexts/MommyLevelContext';
 import ultraSimpleAI from '@/app/utils/ultraSimpleAI';
 import { formatDate, formatTime } from '@/app/utils/dateUtils';
+import StandardHeader from '../components/StandardHeader';
 
 // Web Speech API types for TypeScript
 declare global {
@@ -48,6 +51,7 @@ interface TaskPreview {
 export default function VoicePage() {
     const { session } = useAppContext();
     const { addTaskToState } = useTaskContext();
+    const { mommyLevel } = useMommyLevel();
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [textInput, setTextInput] = useState('');
@@ -546,16 +550,37 @@ If no specific date/time is mentioned, use reasonable defaults.`;
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>🎤 Voice to Tasks</Text>
-                <Text style={styles.headerSubtitle}>
-                    {Platform.OS === 'web' 
-                        ? 'Speak or type your tasks and AI will help organize them'
-                        : 'Type your tasks and AI will help organize them'
-                    }
-                </Text>
-            </View>
+            <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
+            
+            <StandardHeader
+                title="Voice to Tasks"
+                subtitle={Platform.OS === 'web' 
+                    ? 'Speak or type your tasks and AI will help organize them'
+                    : 'Type your tasks and AI will help organize them'
+                }
+                icon="mic"
+                backgroundColor="#4f46e5"
+                rightComponent={
+                    <View style={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 20,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                    }}>
+                        <Ionicons 
+                            name={mommyLevel <= 2 ? "heart" : mommyLevel <= 4 ? "happy" : mommyLevel <= 6 ? "business" : "flash"} 
+                            size={14} 
+                            color="#fff" 
+                            style={{ marginRight: 4 }}
+                        />
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                            Mommy Lvl {mommyLevel}
+                        </Text>
+                    </View>
+                }
+            />
 
             <KeyboardAvoidingView 
                 style={{ flex: 1 }} 
@@ -916,33 +941,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8fafc',
-    },
-    header: {
-        backgroundColor: '#6366f1',
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
-        paddingTop: 36,
-        paddingBottom: 24,
-        paddingHorizontal: 24,
-        marginBottom: 16,
-        shadowColor: '#6366f1',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 10,
-    },
-    headerTitle: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#fff',
-        letterSpacing: 1,
-        textAlign: 'center',
-        marginBottom: 6,
-    },
-    headerSubtitle: {
-        fontSize: 16,
-        color: '#c7d2fe',
-        textAlign: 'center',
     },
     content: {
         flex: 1,

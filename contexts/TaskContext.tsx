@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { Task } from '@/app/(tabs)/types/task';
 import { 
     createTask, 
@@ -56,7 +56,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
                 const dateTimeB = new Date(`${b.date}T${b.time}`).getTime();
                 return dateTimeA - dateTimeB;
             });
-        setTasksList(flatList);
+        return flatList;
     };
 
     // Convert flat list to grouped tasks for calendar view
@@ -74,7 +74,17 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             grouped[date].sort((a, b) => a.time.localeCompare(b.time));
         });
         
+        return grouped;
+    };
+
+    // Update both states in a single batch
+    const updateAllTasks = (flatList: Task[]) => {
+        const grouped = updateGroupedTasks(flatList);
+        const sortedList = updateTasksList(grouped);
+        
+        // Update states together
         setTasks(grouped);
+        setTasksList(sortedList);
     };
 
     // Load tasks from Supabase
@@ -89,10 +99,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
             const supabaseTasks = await fetchUserTasks(session.user.id);
             const localTasks = supabaseTasks.map(supabaseToTask);
             
-            // Update both formats
-            const groupedTasks = groupSupabaseTasksByDate(supabaseTasks);
-            setTasks(groupedTasks);
-            updateTasksList(groupedTasks);
+            // Update both formats using batched update
+            updateAllTasks(localTasks);
             
             console.log(`✅ TaskContext: Loaded ${localTasks.length} tasks`);
         } catch (error) {

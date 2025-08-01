@@ -2,14 +2,14 @@
 
 clear
 echo "================================================================"
-echo "          stuHACK - Development Environment"
+echo "          Mommy AI - Development Environment"
 echo "================================================================"
 echo
 echo "Choose your setup mode:"
 echo
 echo "1. First Time Install + Setup"
 echo "   - Install Ollama (if needed)"
-echo "   - Download AI models"
+echo "   - Download AI models (Llama 3.2)"
 echo "   - Install all dependencies"
 echo "   - Configure network settings"
 echo "   - Start complete environment"

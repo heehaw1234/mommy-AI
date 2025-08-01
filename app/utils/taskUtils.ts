@@ -89,29 +89,43 @@ export const editTask = (
     return updated;
 };
 
-// Helper function to get current time rounded to nearest 15 minutes
+// Helper function to get current time rounded to nearest 5 minutes (Singapore time)
 export const getCurrentTimeRounded = (): Date => {
+    // Create date in Singapore timezone (UTC+8)
     const now = new Date();
-    const minutes = now.getMinutes();
-    const roundedMinutes = Math.ceil(minutes / 15) * 15;
+    const singaporeTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    
+    const minutes = singaporeTime.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 5) * 5;
     
     if (roundedMinutes === 60) {
-        now.setHours(now.getHours() + 1);
-        now.setMinutes(0);
+        singaporeTime.setHours(singaporeTime.getHours() + 1);
+        singaporeTime.setMinutes(0);
     } else {
-        now.setMinutes(roundedMinutes);
+        singaporeTime.setMinutes(roundedMinutes);
     }
     
-    now.setSeconds(0);
-    now.setMilliseconds(0);
-    return now;
+    singaporeTime.setSeconds(0);
+    singaporeTime.setMilliseconds(0);
+    return singaporeTime;
 };
 
-// Helper function to parse time string to Date object
+// Helper function to parse time string to Date object (handles am/pm format)
 export const parseTimeToDate = (timeString: string): Date => {
-    const [hours, minutes] = timeString.split(':').map(Number);
     const date = new Date();
-    date.setHours(hours || 0);
+    
+    // Handle am/pm format
+    const [timeStr, period] = timeString.split(/([ap]m)/i);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    let adjustedHours = hours || 0;
+    if (period && period.toLowerCase() === 'pm' && hours !== 12) {
+        adjustedHours += 12;
+    } else if (period && period.toLowerCase() === 'am' && hours === 12) {
+        adjustedHours = 0;
+    }
+    
+    date.setHours(adjustedHours);
     date.setMinutes(minutes || 0);
     date.setSeconds(0);
     date.setMilliseconds(0);

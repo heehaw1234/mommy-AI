@@ -17,6 +17,10 @@ import UltraSimpleAI from '../utils/ultraSimpleAI';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from "@/lib/supabase";
 import { MotivationCoach, StressLevel, LearningStyle } from '../utils/motivationCoach';
+import { MommyPersonalityManager, MommyLevel } from '../utils/mommyPersonality';
+import EnhancedAIResponseSystem, { ResponseType, TaskContext } from '../utils/enhancedAI';
+import { StandardHeader } from '../components/StandardHeader';
+import { useMommyLevel } from '@/contexts/MommyLevelContext';
 
 // Personality constants
 const MOMMY_EMOJIS = [
@@ -73,6 +77,7 @@ interface Message {
 
 export default function ChatbotScreen() {
   const { session } = useAppContext();
+  const { mommyLevel: currentMommyLevel, updateMommyLevel } = useMommyLevel();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -87,9 +92,8 @@ export default function ChatbotScreen() {
 
   // Personality state
   const [showPersonalityModal, setShowPersonalityModal] = useState(false);
-  const [tempMommyLevel, setTempMommyLevel] = useState(0);
+  const [tempMommyLevel, setTempMommyLevel] = useState(currentMommyLevel);
   const [tempPersonality, setTempPersonality] = useState(0);
-  const [currentMommyLevel, setCurrentMommyLevel] = useState(0);
   const [currentPersonality, setCurrentPersonality] = useState(0);
 
   // Motivation Coach state
@@ -136,7 +140,6 @@ export default function ChatbotScreen() {
         }
 
         if (data) {
-          setCurrentMommyLevel(data.mommy_lvl || 0);
           setCurrentPersonality(data.ai_personality || 0);
           setTempMommyLevel(data.mommy_lvl || 0);
           setTempPersonality(data.ai_personality || 0);
@@ -164,16 +167,15 @@ export default function ChatbotScreen() {
           // Apply adaptive personality if enabled
           if (adaptivePersonalityEnabled) {
             const adaptiveSettings = MotivationCoach.getAdaptivePersonality(profile);
-            setCurrentMommyLevel(adaptiveSettings.mommyLevel);
+            
+            // Update mommy level using context
+            await updateMommyLevel(adaptiveSettings.mommyLevel);
             setCurrentPersonality(adaptiveSettings.personalityType);
             
-            // Update in database
+            // Update AI personality in database
             await supabase
               .from("Profiles")
-              .update({ 
-                mommy_lvl: adaptiveSettings.mommyLevel,
-                ai_personality: adaptiveSettings.personalityType 
-              })
+              .update({ ai_personality: adaptiveSettings.personalityType })
               .eq("id", session.user.id);
           }
         }
@@ -196,20 +198,26 @@ export default function ChatbotScreen() {
 
     try {
       console.log(tempPersonality);
-      const { error } = await supabase
-        .from("Profiles")
-        .update({ 
-          mommy_lvl: tempMommyLevel,
-          ai_personality: tempPersonality 
-        })
-        .eq("id", session.user.id);
-
-      if (error) {
-        console.log("Error updating personality:", error);
+      
+      // Update mommy level using the context
+      const success = await updateMommyLevel(tempMommyLevel);
+      
+      if (!success) {
+        console.log("Error updating mommy level");
         return;
       }
 
-      setCurrentMommyLevel(tempMommyLevel);
+      // Update AI personality in database
+      const { error } = await supabase
+        .from("Profiles")
+        .update({ ai_personality: tempPersonality })
+        .eq("id", session.user.id);
+
+      if (error) {
+        console.log("Error updating AI personality:", error);
+        return;
+      }
+
       setCurrentPersonality(tempPersonality);
       setShowPersonalityModal(false);
 
@@ -299,17 +307,15 @@ export default function ChatbotScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>AI Study Buddy</Text>
-          <Text style={styles.headerSubtitle}>
-            {studentProfile ? 
-              `${getStressLevelEmoji(studentProfile.stressLevel)} ${getStressLevelText(studentProfile.stressLevel)} • Motivation: ${studentProfile.currentMotivationLevel}/10` 
-              : 'Powered by Llama'
-            }
-          </Text>
-        </View>
-        <View style={styles.headerRight}>
+      <StandardHeader
+        title="AI Study Buddy"
+        subtitle={studentProfile ? 
+          `${getStressLevelEmoji(studentProfile.stressLevel)} ${getStressLevelText(studentProfile.stressLevel)} • Motivation: ${studentProfile.currentMotivationLevel}/10` 
+          : 'Powered by Llama'
+        }
+        icon="chatbubble-ellipses-outline"
+        backgroundColor="#4f46e5"
+        rightComponent={
           <TouchableOpacity 
             style={[styles.personalityButton, adaptivePersonalityEnabled && styles.adaptiveActive]}
             onPress={openPersonalityModal}
@@ -318,16 +324,8 @@ export default function ChatbotScreen() {
               {PERSONALITY_EMOJIS[currentPersonality]} {MOMMY_LABELS[currentMommyLevel]}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.adaptiveToggle}
-            onPress={() => setAdaptivePersonalityEnabled(!adaptivePersonalityEnabled)}
-          >
-            <Text style={styles.adaptiveToggleText}>
-              {adaptivePersonalityEnabled ? '🤖 Auto' : '👤 Manual'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+        }
+      />
 
       <KeyboardAvoidingView
         style={styles.chatContainer}

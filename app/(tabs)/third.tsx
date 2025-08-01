@@ -20,10 +20,12 @@ import { getMarkedDates } from '../utils/calendarUtils';
 import { AppButton } from './components/common/AppButton';
 import { FormInput } from './components/common/FormInput';
 import { PickerField } from './components/common/PickerField';
+import { StandardHeader } from '../components/StandardHeader';
 
 // Import context
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
+import { useMommyLevel } from '@/contexts/MommyLevelContext';
 
 export default function CalendarScreen() {
     // Get today's date in YYYY-MM-DD
@@ -41,6 +43,9 @@ export default function CalendarScreen() {
         updateTaskInState,
         removeTaskFromState 
     } = useTaskContext();
+
+    // Mommy level context
+    const { mommyLevel } = useMommyLevel();
 
     // State variables
     const [selected, setSelected] = useState(todayStr);
@@ -285,13 +290,36 @@ export default function CalendarScreen() {
 
     return (
         <SafeAreaView style={layoutStyles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
+            <StatusBar barStyle="light-content" backgroundColor="#4f46e5" />
+            
+            <StandardHeader
+                title="My Calendar"
+                subtitle="Organize your events and tasks"
+                icon="calendar"
+                backgroundColor="#4f46e5"
+                rightComponent={
+                    <View style={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 20,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                    }}>
+                        <Ionicons 
+                            name={mommyLevel <= 2 ? "heart" : mommyLevel <= 4 ? "happy" : mommyLevel <= 6 ? "business" : "flash"} 
+                            size={14} 
+                            color="#fff" 
+                            style={{ marginRight: 4 }}
+                        />
+                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                            Mommy Lvl {mommyLevel}
+                        </Text>
+                    </View>
+                }
+            />
+            
             <ScrollView contentContainerStyle={[styles.container, { padding: 0 }]}>
-                {/* Header */}
-                <View style={layoutStyles.header}>
-                    <Text style={layoutStyles.headerTitle}>📅 My Calendar</Text>
-                    <Text style={layoutStyles.headerSubtitle}>Organize your events and tasks</Text>
-                </View>
 
                 {/* Today Button */}
                 <View style={layoutStyles.todayButtonContainer}>
