@@ -35,17 +35,17 @@ export const buttonStyles = StyleSheet.create({
 
   // Primary Action Buttons
   primaryButton: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#6366f1",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
     width: "48%",
     alignItems: "center",
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
 
   primaryButtonText: {
@@ -56,17 +56,17 @@ export const buttonStyles = StyleSheet.create({
 
   // Full Width Primary Button
   primaryButtonFull: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#6366f1",
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 12,
     width: "100%",
     alignItems: "center",
-    shadowColor: "#2563eb",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
 
   // Edit Button (in view task modal)
@@ -84,7 +84,7 @@ export const buttonStyles = StyleSheet.create({
   },
 
   editButtonText: {
-    color: "#2563eb",
+    color: "#6366f1",
     fontWeight: "bold",
     fontSize: 16,
   },

@@ -12,10 +12,45 @@ export interface SupabaseTask {
     completed: boolean;
 }
 
+// Helper function to convert AM/PM time to 24-hour format
+const convertTo24Hour = (timeString: string): string => {
+    if (timeString === 'no time specified') {
+        return '12:00';
+    }
+    
+    const cleanTime = timeString.trim().toLowerCase().replace(/\s+/g, '');
+    
+    // Handle AM/PM format
+    const ampmMatch = cleanTime.match(/^(\d{1,2}):?(\d{0,2})\s*(am|pm)$/);
+    if (ampmMatch) {
+        let hours = parseInt(ampmMatch[1]);
+        const minutes = parseInt(ampmMatch[2] || '0');
+        const isPM = ampmMatch[3] === 'pm';
+        
+        if (hours === 12 && !isPM) hours = 0; // 12 AM = 0 hours
+        if (hours !== 12 && isPM) hours += 12; // PM hours (except 12 PM)
+        
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    // Handle 24-hour format (already valid)
+    const timeMatch = cleanTime.match(/^(\d{1,2}):?(\d{0,2})$/);
+    if (timeMatch) {
+        const hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2] || '0');
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    // Fallback to current time
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+};
+
 // Convert local Task to Supabase format
 export const taskToSupabase = (task: Task, userId: string): Omit<SupabaseTask, 'id' | 'created_at'> => {
-    // Combine date and time to create due_at timestamp
-    const dueAt = new Date(`${task.date}T${task.time}:00`);
+    // Convert time to 24-hour format and combine with date
+    const time24Hour = convertTo24Hour(task.time);
+    const dueAt = new Date(`${task.date}T${time24Hour}:00`);
     
     return {
         due_at: dueAt.toISOString(),
@@ -30,10 +65,17 @@ export const taskToSupabase = (task: Task, userId: string): Omit<SupabaseTask, '
 export const supabaseToTask = (supabaseTask: SupabaseTask): Task => {
     const dueDate = new Date(supabaseTask.due_at);
     
+    // Convert to AM/PM format
+    const hours = dueDate.getHours();
+    const minutes = dueDate.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const displayHours = hours % 12 || 12;
+    const formattedTime = `${displayHours}:${minutes.toString().padStart(2, '0')}${ampm}`;
+    
     return {
         id: supabaseTask.id,
         text: supabaseTask.title,
-        time: dueDate.toTimeString().slice(0, 5), // HH:MM format
+        time: formattedTime,
         date: dueDate.toISOString().split('T')[0], // YYYY-MM-DD format
         description: supabaseTask.description || undefined,
         completed: supabaseTask.completed || false,

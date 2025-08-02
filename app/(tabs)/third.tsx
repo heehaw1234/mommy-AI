@@ -25,6 +25,8 @@ import { PickerField } from './components/common/PickerField';
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
 
+import { LinearGradient } from 'expo-linear-gradient';
+
 export default function CalendarScreen() {
     // Get today's date in YYYY-MM-DD
     const todayStr = getTodayString();
@@ -284,9 +286,10 @@ export default function CalendarScreen() {
     const groupedTasks = getAllTasksGrouped(tasks);
 
     return (
+        <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.container}>
         <SafeAreaView style={layoutStyles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
-            <ScrollView contentContainerStyle={[styles.container, { padding: 0 }]}>
+            <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
+            <ScrollView contentContainerStyle={{  padding: 0 }}>
                 {/* Header */}
                 <View style={layoutStyles.header}>
                     <Text style={layoutStyles.headerTitle}>📅 My Calendar</Text>
@@ -303,7 +306,7 @@ export default function CalendarScreen() {
                             setShowViewTasksButton(true);
                             setCalendarKey(prev => prev + 1);
                         }}
-                        color="#4f8cff"
+                        color="#6366f1"
                         style={{ width: 140 }}
                         icon={<Ionicons name="today-outline" size={20} color="#fff" />}
                     />
@@ -949,5 +952,6 @@ export default function CalendarScreen() {
 
             </ScrollView>
         </SafeAreaView>
+    </LinearGradient>
     );
 }

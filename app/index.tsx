@@ -101,9 +101,6 @@ export default function Index() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}>
-                <View>
-                    <TextInput style={styles.input} placeholder="Enter your name" onChangeText={setName} value={name}/>
-                </View>
             <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f0f4f8" }}>
                 <Text style={{ fontSize: 50 }}>
                     {emoji}
@@ -130,6 +127,9 @@ export default function Index() {
                     {LABELS.map((l, i) => (
                         <Text key={i} style={{ fontSize: 10, width: 38, marginHorizontal:15, textAlign: "center", color: "#e75480" }}>{l}</Text>
                     ))}
+                </View>
+                <View>
+                    <TextInput style={styles.input} placeholder="Enter your name" onChangeText={setName} value={name}/>
                 </View>
                 <View>
                     <Pressable

@@ -24,6 +24,8 @@ import { buttonStyles } from "./styles/buttonStyles";
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
 
+import { LinearGradient } from "expo-linear-gradient";
+
 export default function TodoListScreen() {
     // Authentication context
     const { session, loggedIn } = useAppContext();
@@ -288,13 +290,14 @@ export default function TodoListScreen() {
     };
 
     return (
-        <SafeAreaView style={layoutStyles.safeArea}>
-            <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
-            <ScrollView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+        <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ flex: 1}}>
+        <SafeAreaView style={{flex: 1}}>
+            <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
                 {/* Header */}
                 <View style={layoutStyles.header}>
-                    <Text style={layoutStyles.headerTitle}>📋 Todo List</Text>
-                    <Text style={layoutStyles.headerSubtitle}>Manage your tasks efficiently</Text>
+                    <Text style={layoutStyles.headerTitle}>✅ Task Manager</Text>
+                    <Text style={layoutStyles.headerSubtitle}>Stay organized and productive</Text>
                 </View>
 
                 {/* Add Task Button */}
@@ -302,7 +305,7 @@ export default function TodoListScreen() {
                     <AppButton
                         title="Add New Task"
                         onPress={() => setShowAddModal(true)}
-                        color="#22c55e"
+                        color="#10b981"
                         style={{ width: '100%' }}
                         icon={<Ionicons name="add-circle-outline" size={20} color="#fff" />}
                     />
@@ -313,24 +316,29 @@ export default function TodoListScreen() {
                     {/* Filter Buttons */}
                     <View style={{
                         flexDirection: 'row',
-                        backgroundColor: '#f8fafc',
-                        borderRadius: 12,
-                        padding: 4,
-                        marginBottom: 16,
+                        backgroundColor: '#ffffff',
+                        borderRadius: 16,
+                        padding: 6,
+                        marginBottom: 20,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 4,
+                        elevation: 2,
                     }}>
                         <TouchableOpacity
                             onPress={() => setFilter('all')}
                             style={{
                                 flex: 1,
-                                paddingVertical: 8,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                                backgroundColor: filter === 'all' ? '#2563eb' : 'transparent',
+                                paddingVertical: 12,
+                                paddingHorizontal: 16,
+                                borderRadius: 12,
+                                backgroundColor: filter === 'all' ? '#6366f1' : 'transparent',
                             }}
                         >
                             <Text style={{
                                 textAlign: 'center',
-                                fontWeight: '500',
+                                fontWeight: '600',
                                 color: filter === 'all' ? '#fff' : '#64748b',
                             }}>
                                 All ({tasks.length})
@@ -340,15 +348,15 @@ export default function TodoListScreen() {
                             onPress={() => setFilter('active')}
                             style={{
                                 flex: 1,
-                                paddingVertical: 8,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                                backgroundColor: filter === 'active' ? '#2563eb' : 'transparent',
+                                paddingVertical: 12,
+                                paddingHorizontal: 16,
+                                borderRadius: 12,
+                                backgroundColor: filter === 'active' ? '#6366f1' : 'transparent',
                             }}
                         >
                             <Text style={{
                                 textAlign: 'center',
-                                fontWeight: '500',
+                                fontWeight: '600',
                                 color: filter === 'active' ? '#fff' : '#64748b',
                             }}>
                                 Active ({tasks.filter(t => !t.completed).length})
@@ -358,15 +366,15 @@ export default function TodoListScreen() {
                             onPress={() => setFilter('completed')}
                             style={{
                                 flex: 1,
-                                paddingVertical: 8,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                                backgroundColor: filter === 'completed' ? '#2563eb' : 'transparent',
+                                paddingVertical: 12,
+                                paddingHorizontal: 16,
+                                borderRadius: 12,
+                                backgroundColor: filter === 'completed' ? '#6366f1' : 'transparent',
                             }}
                         >
                             <Text style={{
                                 textAlign: 'center',
-                                fontWeight: '500',
+                                fontWeight: '600',
                                 color: filter === 'completed' ? '#fff' : '#64748b',
                             }}>
                                 Completed ({tasks.filter(t => t.completed).length})
@@ -407,14 +415,14 @@ export default function TodoListScreen() {
                                     key={task.id || index}
                                     style={{
                                         backgroundColor: '#fff',
-                                        borderRadius: 12,
-                                        padding: 16,
-                                        marginBottom: 12,
+                                        borderRadius: 16,
+                                        padding: 20,
+                                        marginBottom: 16,
                                         shadowColor: '#000',
-                                        shadowOffset: { width: 0, height: 2 },
-                                        shadowOpacity: 0.1,
-                                        shadowRadius: 4,
-                                        elevation: 3,
+                                        shadowOffset: { width: 0, height: 3 },
+                                        shadowOpacity: 0.08,
+                                        shadowRadius: 6,
+                                        elevation: 4,
                                         borderLeftWidth: 4,
                                         borderLeftColor: status.color,
                                         opacity: task.completed ? 0.7 : 1,
@@ -901,5 +909,6 @@ export default function TodoListScreen() {
 
             </ScrollView>
         </SafeAreaView>
+    </LinearGradient>
     );
 }

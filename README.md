@@ -1,14 +1,45 @@
-# stuHACK - AI-Powered Task Management App 🚀
+# Mommy AI - Advanced Task Management & AI Assistant 🚀💝
 
-A React Native app built with Expo, featuring an intelligent AI chatbot powered by local Ollama integration, Supabase backend, and comprehensive task management.
+A sophisticated React Native app built with Expo, featuring an intelligent AI chatbot with dynamic personality system, comprehensive task management, advanced mommy-level behavior adaptation, and a global floating AI overlay.
 
-## 🎯 Features
+## ✨ Key Features
 
-- **AI Chatbot** - Local Ollama integration with Llama 3.2 for unlimited, free AI responses
-- **Task Management** - Create, edit, and organize tasks with calendar integration
-- **Multi-Provider AI** - Ollama (primary), OpenAI, Hugging Face with smart fallbacks
-- **Supabase Backend** - Real-time data synchronization and authentication
-- **Cross-Platform** - Works on iOS, Android, and web
+### 🤖 **Advanced AI System**
+- **Mommy Personality System** - 10-level personality scale (Sweet → Alpha) with dynamic behavior
+- **Contextual AI Responses** - Smart responses based on task status, deadlines, and completion rates
+- **Multi-Provider AI** - Ollama (primary), OpenAI, Hugging Face with intelligent fallbacks
+- **Dynamic Speech Patterns** - Personality-based communication styles and vocabulary
+- **Voice Integration** - Speech-to-text and text-to-speech functionality
+
+### 📋 **Intelligent Task Management**
+- **Mommy Multiplier System** - Task urgency dynamically adjusts based on personality level (1x → 5x strictness)
+- **Smart Task Prioritization** - Overdue → Critical → Urgent → Upcoming with visual indicators
+- **Advanced Task Filtering** - All/Active/Completed tasks with intelligent sorting by deadline proximity
+- **Real-time Synchronization** - Instant updates across all pages and devices
+- **Rich Task Details** - Date, time, descriptions, completion tracking, and priority indicators
+- **Calendar Integration** - Full calendar view with task visualization and date selection
+
+### 🎨 **Modern UI/UX Design**
+- **Standardized Headers** - Consistent design across all pages with personality indicators
+- **Responsive Design** - Optimized for mobile with smooth animations and transitions
+- **Global State Management** - Context-based architecture for seamless data flow
+- **Cross-Platform Support** - iOS, Android, and web compatibility
+- **Adaptive Themes** - Personality-based color schemes and visual feedback
+
+### 🏗️ **Architecture & Development**
+- **TypeScript** - Full type safety throughout the application
+- **Modular Architecture** - Clean separation of concerns with reusable components
+- **Context-Driven State** - React Context for global state management
+- **Persistent Storage** - Supabase backend with offline-capable local storage
+- **Error Handling** - Comprehensive error management and graceful fallbacks
+- **Component Library** - Reusable UI components (StandardHeader, AppButton, FormInput, etc.)
+
+### 🛠️ **Technical Highlights**
+- **Database Integration** - Supabase for user authentication and task storage
+- **Animation System** - Smooth React Native animations with gesture handling
+- **Navigation System** - Expo Router with proper tab-based routing
+- **Calendar System** - Advanced calendar with task markers and date navigation
+- **ICS Import** - Calendar file import functionality for external events
 
 ## 🚀 Quick Start
 
@@ -26,7 +57,175 @@ HUGGING_FACE_TOKEN=your_hugging_face_token
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-### 3. Unified Setup & Development Script
+### 3. Database Setup & Authentication
+
+#### **Supabase Configuration**
+This app uses **phone-based authentication** with Supabase. Make sure your Supabase project is configured correctly:
+
+**Required Database Tables:**
+- `Profiles` - User profiles with mommy level settings
+- `Tasks` - Task management with user associations
+- `StudentProfiles` - Learning analytics (optional)
+- `flashcards` - Study materials (optional)
+
+**Authentication Setup:**
+1. **Phone Auth**: The app uses Singapore phone numbers (+65) with dummy passwords
+2. **Profile Creation**: Automatic profile creation via database trigger
+3. **RLS Policies**: Row Level Security configured for user data isolation
+
+#### **Database Trigger Fix**
+⚠️ **Important**: If you encounter "Database error saving new user", run this SQL in your Supabase SQL Editor:
+
+```sql
+-- Fix the automatic profile creation trigger
+CREATE OR REPLACE FUNCTION public.create_profile_for_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.Profiles (
+    id, number, created_at, updated_at, mommy_lvl, ai_personality
+  ) VALUES (
+    NEW.id,
+    COALESCE(NEW.phone, 'Unknown'),
+    NOW(), NOW(), 0, 0
+  );
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE LOG 'Failed to create profile for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+This ensures robust error handling during user registration.
+
+```
+
+**Windows:**
+```cmd
+# Quick development start
+dev-start.bat
+
+# Or manually:
+npx expo start
+```
+
+**Linux/macOS:**
+```bash
+# Quick development start
+./dev-start.sh
+
+# Or manually:
+npx expo start
+```
+
+### 4. Authentication Flow
+
+The app uses a **phone-based authentication system**:
+
+1. **User enters 8-digit Singapore phone number** (e.g., 91234567)
+2. **System formats as +65XXXXXXXX** and attempts signup/signin
+3. **Database trigger automatically creates Profile** with default settings
+4. **User proceeds to profile setup** to customize name and mommy level
+5. **Full access to all app features** after profile completion
+
+**Authentication Features:**
+- 📱 **Singapore Phone Format**: Auto-formats to +65 country code
+- 🔐 **Secure Backend**: Supabase auth with dummy passwords for demo
+- 🔄 **Auto Profile Creation**: Database trigger creates user profile automatically
+- ⚡ **Instant Access**: No email verification or OTP required (disabled for demo)
+- 🛡️ **Data Security**: Row Level Security (RLS) isolates user data
+
+### 4. Setup Instructions for `dev-start.bat` and `dev-start.sh`
+
+These scripts provide automated development environment setup:
+
+**dev-start.bat (Windows):**
+- Automatically installs dependencies if node_modules is missing
+- Clears Expo cache and metro bundler cache
+- Starts Expo development server with optimized settings
+- Provides colored output for better debugging
+
+**dev-start.sh (Linux/macOS):**
+- Same functionality as Windows batch file
+- Includes permission checks and automatic chmod +x
+- Cross-platform compatibility
+
+**Usage:**
+```cmd
+# Windows
+dev-start.bat
+
+# Linux/macOS  
+chmod +x dev-start.sh && ./dev-start.sh
+```
+
+##   Troubleshooting
+
+### Authentication Issues
+
+**"Database error saving new user"**
+- This indicates the database trigger `create_profile_for_user()` is failing
+- Run the trigger fix SQL (provided in Database Setup section) in Supabase SQL Editor
+- Alternatively, disable the trigger temporarily: `ALTER TABLE auth.users DISABLE TRIGGER create_profile_trigger;`
+
+**"Invalid login credentials"**
+- Occurs when trying to sign in with a non-existent phone number
+- The app automatically attempts signup if signin fails
+- Ensure your Supabase project allows phone authentication
+
+**Phone Number Format**
+- Only accepts 8-digit Singapore numbers (e.g., 91234567)
+- Automatically converts to international format (+6591234567)
+- Rejects numbers that aren't exactly 8 digits
+
+### AI Chatbot Issues
+
+**AI Not Responding**
+1. Check if Ollama is running: `ollama list` 
+2. Verify model is installed: `ollama pull llama3.2`
+3. Start Ollama with network access: `$env:OLLAMA_HOST="0.0.0.0"; ollama serve`
+4. Check your network IP in `ultraSimpleAI.ts`
+
+**Fallback Systems**
+- Primary: Ollama (local AI)
+- Secondary: OpenAI GPT (requires API key)
+- Tertiary: Hugging Face (requires token)
+
+### Development Issues
+
+**Metro Bundle Issues**
+- Run `npx expo start --clear` to clear cache
+- Delete `node_modules` and run `npm install`
+- Use the provided `dev-start.bat` for automated setup
+
+**Database Connection**
+- Verify `.env` file has correct Supabase credentials
+- Check Supabase project is active and accessible
+- Ensure RLS policies allow your operations
+
+##  📱 Core Functionality
+
+### Navigation Structure
+- **Home** - Dashboard with overview and quick actions
+- **Chatbot** - AI personality interaction with mood selection
+- **Tasks** - Comprehensive task management with mommy multiplier system
+- **Calendar** - Visual calendar with task integration and ICS import
+- **Voice** - Speech interaction and voice commands
+- **Profile** - User settings and personality level configuration
+
+### Mommy Level Behavior
+1. **Level 1-2** (Sweet Mommy): Gentle reminders, encouraging language
+2. **Level 3-4** (Caring Mommy): More assertive, helpful suggestions
+3. **Level 5-6** (Firm Mommy): Direct communication, clear expectations
+4. **Level 7-8** (Strict Mommy): Demanding tone, performance focus
+5. **Level 9-10** (Alpha Mommy): Maximum strictness, zero tolerance
+
+### Task Urgency Calculation
+- **Base Categories**: Overdue, Critical (≤2h), Urgent (≤12h), Upcoming
+- **Mommy Multiplier**: Adjusts time thresholds based on personality level
+- **Visual Indicators**: Color-coded task cards with status badges
+- **Smart Sorting**: Automatically prioritizes by deadline and importance
 
 All setup and development is now handled by **one batch file**:
 
@@ -81,28 +280,38 @@ dev-start.bat
 
 ## 🏗️ Development
 
-### Project Structure
+### 🔧 Project Structure
 ```
 app/
-├── (tabs)/           # Tab navigation screens
-│   ├── home.tsx      # Home screen
-│   ├── second.tsx    # Calendar view
-│   ├── third.tsx     # Task management
-│   ├── fourth.tsx    # Settings
-│   └── chatbot.tsx   # AI chatbot interface
-├── utils/            # Utility functions
-│   ├── ultraSimpleAI.ts    # AI service integration
-│   ├── taskUtils.ts        # Task management helpers
+├── (tabs)/                   # Tab navigation screens
+│   ├── home.tsx             # Study dashboard with stats and achievements
+│   ├── second.tsx           # Advanced task manager with mommy multiplier
+│   ├── third.tsx            # Calendar view with task visualization
+│   ├── voice.tsx            # Voice interaction interface
+│   ├── profile.tsx          # User profile and settings
+│   └── chatbot.tsx          # AI chatbot with personality system
+├── components/              # Reusable UI components
+│   ├── StandardHeader.tsx         # Consistent header component
+│   └── MommyAIResponse.tsx        # AI response system
+├── contexts/                # Global state management
+│   ├── AppContext.tsx       # Authentication and app state
+│   ├── TaskContext.tsx      # Task management state
+│   └── MommyLevelContext.tsx # Mommy personality state
+├── utils/                   # Core utilities
+│   ├── mommyPersonality.ts  # 10-level personality system
+│   ├── enhancedAI.ts        # Contextual AI response generation
+│   ├── ultraSimpleAI.ts     # Multi-provider AI service
 │   └── supabaseTaskService.ts # Database operations
-└── components/       # Reusable components
+└── database/                # Supabase schema and migrations
 ```
 
-### Key Technologies
-- **Expo** ~53.0.20 - React Native framework
-- **TypeScript** - Type safety
-- **Supabase** - Backend as a Service
-- **Ollama** - Local AI inference
-- **expo-router** - File-based navigation
+### 🎯 Core Technologies
+- **Expo** ~53.0.20 - React Native framework with latest features
+- **TypeScript** - Complete type safety and IntelliSense
+- **Supabase** - PostgreSQL backend with real-time subscriptions
+- **Ollama** - Local AI inference for unlimited free responses
+- **React Context** - Global state management without Redux
+- **AsyncStorage** - Persistent local storage for user preferences
 
 ## 🔧 Troubleshooting
 
@@ -135,20 +344,55 @@ npm install --legacy-peer-deps
 **🚀 Super Quick (Windows - Zero Manual Commands):**
 1. Install [Node.js](https://nodejs.org) and [Ollama](https://ollama.ai)
 2. Clone repo: `git clone <your-repo>`
-3. Run `dev-start.bat` and choose option 1
-4. For daily use, run `dev-start.bat` and choose option 2
-5. **✅ AI Chatbot ready - start demo!** 🎉
+3. Run `dev-start.bat` and choose option 1 (First Time Setup)
+4. For daily use, run `dev-start.bat` and choose option 2 (Daily Development)
+5. **✅ Full AI-powered task manager ready!** 🎉
 
-> **For teammates:** Just install Node.js + Ollama, then copy the entire project folder. The batch file handles everything else automatically including model downloads!
+> **For teammates:** Just install Node.js + Ollama, then copy the project folder. The batch file handles everything automatically including model downloads and dependency setup!
 
-**Manual (Any Platform):**
-1. Clone repo
-2. `npm install`
-3. Set up `.env` with your API keys (optional)
-4. Install Ollama: `ollama pull llama3.2`
-5. Start Ollama: `$env:OLLAMA_HOST="0.0.0.0"; ollama serve`
-6. Start app: `npx expo start`
-7. **✅ Test AI chatbot - you're ready to demo!** 🚀
+**📱 Alternative Script (Cross-Platform):**
+```bash
+# For macOS/Linux users
+chmod +x dev-start.sh
+./dev-start.sh
+```
+
+**Manual Setup (Any Platform):**
+1. Clone repo and install: `npm install`
+2. Set up `.env` with your Supabase and AI API keys
+3. Install Ollama and pull model: `ollama pull llama3.2`
+4. Start Ollama with network access: `$env:OLLAMA_HOST="0.0.0.0"; ollama serve`
+5. Start development server: `npx expo start`
+6. **✅ Demo the mommy AI personality system!** 🚀
+
+## 🔥 Demo Highlights
+
+### 🤖 **Mommy AI Personality System**
+- **Levels 0-1 (Sweet)**: Gentle encouragement, heart icons, caring language
+- **Levels 2-4 (Caring)**: Supportive guidance, happy icons, motivational speech
+- **Levels 5-7 (Firm)**: Direct oversight, business icons, assertive communication
+- **Levels 8-9 (Alpha)**: Commanding presence, lightning icons, authoritative tone
+
+### 📋 **Intelligent Task Urgency**
+- **Mommy Multiplier**: Higher personality levels make tasks appear more urgent
+- **Visual Indicators**: Color-coded priority with dynamic thresholds
+- **Smart Notifications**: AI popup frequency adapts to personality level
+
+### 🎨 **Advanced UI Features**
+- **Floating AI Navigator**: Draggable, persistent AI assistant across all pages
+- **Standardized Headers**: Consistent design with personality indicators
+- **Global State Sync**: Mommy level changes instantly reflect everywhere
+
+## 💝 What Makes This Special
+
+This isn't just another task manager - it's a **personality-driven AI companion** that adapts its behavior based on your chosen "mommy level." From sweet and encouraging to firm and commanding, the AI's responses, visual design, and interaction patterns all change dynamically.
+
+**Perfect for demonstrating:**
+- Advanced React Native architecture with Context API
+- Multi-provider AI integration with intelligent fallbacks
+- Complex animation systems with persistent user preferences
+- Real-time state synchronization across multiple screens
+- Innovative UX patterns like floating, draggable interfaces
 
 ## 📱 Platform Support
 
