@@ -30,7 +30,9 @@ export default function Index() {
                     .select("*")
                     .eq('id', session.user.id);
                 if (error) throw error;
-                if (data.length !== 0) router.replace("/home");
+                if (data.length !== 0) {
+                    router.replace("/home");
+                }
                 //if user already has row in Profiles then no need to setup
 
             } catch (error) {
@@ -97,50 +99,49 @@ export default function Index() {
     const idx = getStageIndex(value);
     const emoji = EMOJIS[idx];
     const label = LABELS[idx];
-
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }}>
-                <View>
-                    <TextInput style={styles.input} placeholder="Enter your name" onChangeText={setName} value={name}/>
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f0f4f8" }}>
+                    <Text style={{ fontSize: 50 }}>
+                        {emoji}
+                    </Text>
+                    <Text style={{ marginTop: 30, fontSize: 18, color: "#e75480", fontWeight: "bold" }}>
+                        {label}
+                    </Text>
+                    <Slider style={{width:300, height:40}}
+                        minimumValue={0}
+                        maximumValue={1}
+                        value={value}
+                        onValueChange={setValue}
+                        step={0.25}
+                        minimumTrackTintColor="#e75480"
+                        maximumTrackTintColor="#b6c3d1"
+                        thumbTintColor="#e75480"/>
+                    <View style={{ flexDirection: "row", marginTop: 32, justifyContent: "center", flexWrap: "wrap" }}>
+                        {EMOJIS.map((e, i) => (
+                            <View key={i} style={{ alignItems: "center", width: 32, marginHorizontal: 15 }}>
+                                <Text style={{ fontSize: 28 }}>{e}</Text>
+                            </View>))}
+                    </View>
+                    <View style={{ flexDirection: "row", marginTop: 4, flexWrap: "wrap", justifyContent: "center" }}>
+                        {LABELS.map((l, i) => (
+                            <Text key={i} style={{ fontSize: 10, width: 38, marginHorizontal:15, textAlign: "center", color: "#e75480" }}>{l}</Text>
+                        ))}
+                    </View>
+                    <View>
+                        <TextInput style={styles.input} placeholder="Enter your name" onChangeText={setName} value={name}/>
+                    </View>
+                    <View>
+                        <Pressable
+                            onPress={handleSetup}
+                            style={styles.button}
+                        >
+                            <Text style={styles.buttonText}>Continue</Text>
+                        </Pressable>
                 </View>
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f0f4f8" }}>
-                <Text style={{ fontSize: 50 }}>
-                    {emoji}
-                </Text>
-                <Text style={{ marginTop: 30, fontSize: 18, color: "#e75480", fontWeight: "bold" }}>
-                    {label}
-                </Text>
-                <Slider style={{width:300, height:40}}
-                    minimumValue={0}
-                    maximumValue={1}
-                    value={value}
-                    onValueChange={setValue}
-                    step={0.25}
-                    minimumTrackTintColor="#e75480"
-                    maximumTrackTintColor="#b6c3d1"
-                    thumbTintColor="#e75480"/>
-                <View style={{ flexDirection: "row", marginTop: 32, justifyContent: "center", flexWrap: "wrap" }}>
-                    {EMOJIS.map((e, i) => (
-                        <View key={i} style={{ alignItems: "center", width: 32, marginHorizontal: 15 }}>
-                            <Text style={{ fontSize: 28 }}>{e}</Text>
-                        </View>))}
                 </View>
-                <View style={{ flexDirection: "row", marginTop: 4, flexWrap: "wrap", justifyContent: "center" }}>
-                    {LABELS.map((l, i) => (
-                        <Text key={i} style={{ fontSize: 10, width: 38, marginHorizontal:15, textAlign: "center", color: "#e75480" }}>{l}</Text>
-                    ))}
-                </View>
-                <View>
-                    <Pressable
-                        onPress={handleSetup}
-                        style={styles.button}
-                    >
-                        <Text style={styles.buttonText}>Continue</Text>
-                    </Pressable>
-            </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
         </SafeAreaView>
     )
     }
