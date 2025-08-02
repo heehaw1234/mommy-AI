@@ -26,6 +26,7 @@ export default {
     },
     "android": {
       "package": "com.zhengchong.mommy",
+      "plugins": ["expo-linear-gradient"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

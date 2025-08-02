@@ -4,7 +4,6 @@ export const layoutStyles = StyleSheet.create({
   // Main Container
   safeArea: {
     flex: 1,
-    backgroundColor: "#f8fafc",
   },
 
   // Header

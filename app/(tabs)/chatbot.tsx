@@ -17,6 +17,7 @@ import UltraSimpleAI from '../utils/ultraSimpleAI';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from "@/lib/supabase";
 import { MotivationCoach, StressLevel, LearningStyle } from '../utils/motivationCoach';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Personality constants
 const MOMMY_EMOJIS = [
@@ -298,6 +299,8 @@ export default function ChatbotScreen() {
   );
 
   return (
+    <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }} style={styles.container}>
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -544,13 +547,13 @@ export default function ChatbotScreen() {
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
+  </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   header: {
     backgroundColor: '#6366f1',

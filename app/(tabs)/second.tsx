@@ -24,6 +24,8 @@ import { buttonStyles } from "./styles/buttonStyles";
 import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
 
+import { LinearGradient } from "expo-linear-gradient";
+
 export default function TodoListScreen() {
     // Authentication context
     const { session, loggedIn } = useAppContext();
@@ -288,9 +290,10 @@ export default function TodoListScreen() {
     };
 
     return (
-        <SafeAreaView style={layoutStyles.safeArea}>
+        <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ flex: 1}}>
+        <SafeAreaView style={{flex: 1}}>
             <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
-            <ScrollView style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
                 {/* Header */}
                 <View style={layoutStyles.header}>
                     <Text style={layoutStyles.headerTitle}>✅ Task Manager</Text>
@@ -906,5 +909,6 @@ export default function TodoListScreen() {
 
             </ScrollView>
         </SafeAreaView>
+    </LinearGradient>
     );
 }

@@ -18,6 +18,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useTaskContext } from '@/contexts/TaskContext';
 import ultraSimpleAI from '@/app/utils/ultraSimpleAI';
 import { formatDate, formatTime } from '@/app/utils/dateUtils';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Web Speech API types for TypeScript
 declare global {
@@ -545,6 +546,7 @@ If no specific date/time is mentioned, use reasonable defaults.`;
     };
 
     return (
+        <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ flex: 1 }}>
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
@@ -909,13 +911,13 @@ If no specific date/time is mentioned, use reasonable defaults.`;
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8fafc',
     },
     header: {
         backgroundColor: '#6366f1',

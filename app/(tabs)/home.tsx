@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from "react-native";
+import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert, Image } from "react-native";
 import { useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback } from "react";
@@ -8,6 +8,8 @@ import { useTaskContext } from "@/contexts/TaskContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from 'react-native-chart-kit';
+import { LinearGradient } from 'expo-linear-gradient';
+
 
 type UserData = {
     id: string;
@@ -487,12 +489,14 @@ export default function Index() {
     }, [fetchAchievements, studyStats.totalTasks]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }} style={styles.container}>
+        <SafeAreaView>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerContent}>
-                        <Ionicons name="school" size={32} color="#fff" />
+                        <Image source={require('@/assets/images/mommy-ai.jpeg')} style={{ width: 60, height: 60, borderRadius: 10 }} />
                         <Text style={styles.headerTitle}>Study Dashboard</Text>
                         <Text style={styles.headerSubtitle}>Level up your learning! 🚀</Text>
                     </View>
@@ -675,16 +679,16 @@ export default function Index() {
                         </TouchableOpacity>
                     </View>
                 </View>
-
             </ScrollView>
         </SafeAreaView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#ffe6f0",
     },
     scrollContent: {
         flexGrow: 1,

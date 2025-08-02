@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from "@/lib/supabase";
 import { useAppContext } from "@/contexts/AppContext";
+import { LinearGradient } from 'expo-linear-gradient';
 
 type UserData = {
     id: string;
@@ -110,9 +111,11 @@ export default function Index() {
     }, [fetchUserData]);
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+    <LinearGradient colors={['#FFC0CB', '#FFFFFF']} start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }} style={styles.container}>
+        <SafeAreaView style={{ flex: 1 }}>
             <StatusBar barStyle="light-content" backgroundColor="#6366f1" />
-            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{flex:1}} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.headerContent}>
@@ -226,6 +229,7 @@ export default function Index() {
                 )}
             </ScrollView>
         </SafeAreaView>
+    </LinearGradient>
     );
 }
 
@@ -236,7 +240,6 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        backgroundColor: '#f1f5f9',
     },
     header: {
         backgroundColor: '#6366f1',
