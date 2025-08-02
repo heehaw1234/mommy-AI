@@ -57,6 +57,57 @@ HUGGING_FACE_TOKEN=your_hugging_face_token
 OPENAI_API_KEY=your_openai_api_key
 ```
 
+### 3. Database Setup & Authentication
+
+#### **Supabase Configuration**
+This app uses **phone-based authentication** with Supabase. Make sure your Supabase project is configured correctly:
+
+**Required Database Tables:**
+- `Profiles` - User profiles with mommy level settings
+- `Tasks` - Task management with user associations
+- `StudentProfiles` - Learning analytics (optional)
+- `flashcards` - Study materials (optional)
+
+**Authentication Setup:**
+1. **Phone Auth**: The app uses Singapore phone numbers (+65) with dummy passwords
+2. **Profile Creation**: Automatic profile creation via database trigger
+3. **RLS Policies**: Row Level Security configured for user data isolation
+
+#### **Database Trigger Fix**
+⚠️ **Important**: If you encounter "Database error saving new user", run this SQL in your Supabase SQL Editor:
+
+```sql
+-- Fix the automatic profile creation trigger
+CREATE OR REPLACE FUNCTION public.create_profile_for_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.Profiles (
+    id, number, created_at, updated_at, mommy_lvl, ai_personality
+  ) VALUES (
+    NEW.id,
+    COALESCE(NEW.phone, 'Unknown'),
+    NOW(), NOW(), 0, 0
+  );
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE LOG 'Failed to create profile for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+This ensures robust error handling during user registration.
+
+```
+
+**Windows:**
+```cmd
+# Quick development start
+dev-start.bat
+
+# Or manually:
+npx expo start
 ```
 
 **Linux/macOS:**
@@ -67,6 +118,23 @@ OPENAI_API_KEY=your_openai_api_key
 # Or manually:
 npx expo start
 ```
+
+### 4. Authentication Flow
+
+The app uses a **phone-based authentication system**:
+
+1. **User enters 8-digit Singapore phone number** (e.g., 91234567)
+2. **System formats as +65XXXXXXXX** and attempts signup/signin
+3. **Database trigger automatically creates Profile** with default settings
+4. **User proceeds to profile setup** to customize name and mommy level
+5. **Full access to all app features** after profile completion
+
+**Authentication Features:**
+- 📱 **Singapore Phone Format**: Auto-formats to +65 country code
+- 🔐 **Secure Backend**: Supabase auth with dummy passwords for demo
+- 🔄 **Auto Profile Creation**: Database trigger creates user profile automatically
+- ⚡ **Instant Access**: No email verification or OTP required (disabled for demo)
+- 🛡️ **Data Security**: Row Level Security (RLS) isolates user data
 
 ### 4. Setup Instructions for `dev-start.bat` and `dev-start.sh`
 
@@ -92,7 +160,51 @@ dev-start.bat
 chmod +x dev-start.sh && ./dev-start.sh
 ```
 
-## 📱 Core Functionality
+## � Troubleshooting
+
+### Authentication Issues
+
+**"Database error saving new user"**
+- This indicates the database trigger `create_profile_for_user()` is failing
+- Run the trigger fix SQL (provided in Database Setup section) in Supabase SQL Editor
+- Alternatively, disable the trigger temporarily: `ALTER TABLE auth.users DISABLE TRIGGER create_profile_trigger;`
+
+**"Invalid login credentials"**
+- Occurs when trying to sign in with a non-existent phone number
+- The app automatically attempts signup if signin fails
+- Ensure your Supabase project allows phone authentication
+
+**Phone Number Format**
+- Only accepts 8-digit Singapore numbers (e.g., 91234567)
+- Automatically converts to international format (+6591234567)
+- Rejects numbers that aren't exactly 8 digits
+
+### AI Chatbot Issues
+
+**AI Not Responding**
+1. Check if Ollama is running: `ollama list` 
+2. Verify model is installed: `ollama pull llama3.2`
+3. Start Ollama with network access: `$env:OLLAMA_HOST="0.0.0.0"; ollama serve`
+4. Check your network IP in `ultraSimpleAI.ts`
+
+**Fallback Systems**
+- Primary: Ollama (local AI)
+- Secondary: OpenAI GPT (requires API key)
+- Tertiary: Hugging Face (requires token)
+
+### Development Issues
+
+**Metro Bundle Issues**
+- Run `npx expo start --clear` to clear cache
+- Delete `node_modules` and run `npm install`
+- Use the provided `dev-start.bat` for automated setup
+
+**Database Connection**
+- Verify `.env` file has correct Supabase credentials
+- Check Supabase project is active and accessible
+- Ensure RLS policies allow your operations
+
+## �📱 Core Functionality
 
 ### Navigation Structure
 - **Home** - Dashboard with overview and quick actions
