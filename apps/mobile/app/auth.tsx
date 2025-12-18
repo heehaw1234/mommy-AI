@@ -20,34 +20,41 @@ export default function Auth() {
             Alert.alert("Error", "Please enter your Singaporean number");
             return;
         } else if (phone.length !== 8) {
-            Alert.alert("Error, We only accept phone number of length 8");
+            Alert.alert("Error", "We only accept phone number of length 8");
             return;
         }
 
-        const formattedPhone = `${phone.replace(/\D/g, '')}`;
+        // Format phone with Singapore country code
+        const formattedPhone = `+65${phone.replace(/\D/g, '')}`;
+        const dummyPassword = 'dummy_password_123';
 
         try {
             setLoading(true);
 
-            // Direct sign in without OTP verification
-            const { data, error } = await supabase.auth.signInWithPassword({
+            // Try to sign in first
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
                 phone: formattedPhone,
-                password: 'dummy_password' // You might need to handle this differently
+                password: dummyPassword,
             });
 
-            if (error) {
-                // If user doesn't exist, create them automatically
+            if (signInError) {
+                // If sign in fails, try to sign up
                 const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
                     phone: formattedPhone,
-                    password: 'dummy_password', // You'll need a different approach for passwordless
+                    password: dummyPassword,
                 });
 
-                if (signUpError) throw signUpError;
+                if (signUpError) {
+                    throw signUpError;
+                }
+
                 Alert.alert('Success', 'Account created and signed in successfully!');
             } else {
                 Alert.alert('Success', 'Signed in successfully!');
             }
+
         } catch (error) {
+            console.error('Auth error:', error);
             Alert.alert('Error', error instanceof Error ? error.message : 'Authentication failed');
         } finally {
             setLoading(false);
@@ -58,7 +65,7 @@ export default function Auth() {
         <View style={styles.container}>
             <Text style={styles.title}>Phone Sign In</Text>
 
-            <Text style={styles.note}>Example: 9123 4567</Text>
+            <Text style={styles.note}>Example: 91234567</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Phone Number"

@@ -13,53 +13,53 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from "@react-native-community/slider";
-import UltraSimpleAI from '../utils/ultraSimpleAI';
+import { api } from '../../src/api/client';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from "@/lib/supabase";
 
 // Personality constants
 const MOMMY_EMOJIS = [
-    "🙂", "😐", "😑", "😕", "😒", "😠", "😡", "🤬", "👿", "💢"
+  "🙂", "😐", "😑", "😕", "😒", "😠", "😡", "🤬", "👿", "💢"
 ];
 
 const MOMMY_LABELS = [
-    "Sweet Mommy", "Caring", "Helpful", "Direct", "Firm", 
-    "Stern", "Demanding", "Fierce", "Domineering", "Alpha Mommy"
+  "Sweet Mommy", "Caring", "Helpful", "Direct", "Firm",
+  "Stern", "Demanding", "Fierce", "Domineering", "Alpha Mommy"
 ];
 
 const MOMMY_DESCRIPTIONS = [
-    "💕 Sweet and nurturing, always encouraging",
-    "😊 Warm and supportive, gentle guidance", 
-    "🤝 Helpful and straightforward responses",
-    "📝 Direct communication, gets to the point",
-    "💪 Firm guidance, no-nonsense approach",
-    "😤 Stern tone, expects you to do better",
-    "⚡ Demanding excellence, pushes you harder",
-    "🔥 Fierce motivation, very intense responses",
-    "👑 Domineering style, takes full control",
-    "💯 Maximum intensity, alpha energy"
+  "💕 Sweet and nurturing, always encouraging",
+  "😊 Warm and supportive, gentle guidance",
+  "🤝 Helpful and straightforward responses",
+  "📝 Direct communication, gets to the point",
+  "💪 Firm guidance, no-nonsense approach",
+  "😤 Stern tone, expects you to do better",
+  "⚡ Demanding excellence, pushes you harder",
+  "🔥 Fierce motivation, very intense responses",
+  "👑 Domineering style, takes full control",
+  "💯 Maximum intensity, alpha energy"
 ];
 
 const PERSONALITY_EMOJIS = [
-    "😊", "🤓", "💼", "😂", "😏", "🎭", "🤔", "🔥", "😎", "🤖"
+  "😊", "🤓", "💼", "😂", "😏", "🎭", "🤔", "🔥", "😎", "🤖"
 ];
 
 const PERSONALITY_LABELS = [
-    "Friendly", "Smart", "Professional", "Funny", "Sarcastic",
-    "Dramatic", "Philosophical", "Motivational", "Cool", "Robotic"
+  "Friendly", "Smart", "Professional", "Funny", "Sarcastic",
+  "Dramatic", "Philosophical", "Motivational", "Cool", "Robotic"
 ];
 
 const PERSONALITY_DESCRIPTIONS = [
-    "😊 Warm, welcoming, and always positive",
-    "🤓 Intelligent, informative, loves sharing knowledge", 
-    "💼 Formal, business-like, gets straight to work",
-    "😂 Humorous, entertaining, loves making jokes",
-    "😏 Witty with a bite, uses clever sarcasm",
-    "🎭 Theatrical, expressive, everything is dramatic",
-    "🤔 Deep thinker, philosophical, asks big questions",
-    "🔥 Inspiring, energetic, pushes you to succeed",
-    "😎 Confident, laid-back, effortlessly cool",
-    "🤖 Systematic, formal, precise and logical"
+  "😊 Warm, welcoming, and always positive",
+  "🤓 Intelligent, informative, loves sharing knowledge",
+  "💼 Formal, business-like, gets straight to work",
+  "😂 Humorous, entertaining, loves making jokes",
+  "😏 Witty with a bite, uses clever sarcasm",
+  "🎭 Theatrical, expressive, everything is dramatic",
+  "🤔 Deep thinker, philosophical, asks big questions",
+  "🔥 Inspiring, energetic, pushes you to succeed",
+  "😎 Confident, laid-back, effortlessly cool",
+  "🤖 Systematic, formal, precise and logical"
 ];
 
 interface Message {
@@ -130,9 +130,9 @@ export default function ChatbotScreen() {
       console.log(tempPersonality);
       const { error } = await supabase
         .from("Profiles")
-        .update({ 
+        .update({
           mommy_lvl: tempMommyLevel,
-          ai_personality: tempPersonality 
+          ai_personality: tempPersonality
         })
         .eq("id", session.user.id);
 
@@ -181,12 +181,12 @@ export default function ChatbotScreen() {
     setIsLoading(true);
 
     try {
-      // Call ultra-reliable AI service with user ID for personality
-      const response = await UltraSimpleAI.generateResponse(
-        userMessage.text, 
+      // Call backend API for chat response
+      const { text: response } = await api.chat(
+        userMessage.text,
         session?.user?.id // Pass user ID for personality customization
       );
-      
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: response,
@@ -236,7 +236,7 @@ export default function ChatbotScreen() {
           <Text style={styles.headerTitle}>AI Assistant</Text>
           <Text style={styles.headerSubtitle}>Powered by Llama</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.personalityButton}
           onPress={openPersonalityModal}
         >
@@ -306,7 +306,7 @@ export default function ChatbotScreen() {
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>🔥 Fierceness Level</Text>
               <Text style={styles.sectionDescription}>How intense should I be?</Text>
-              
+
               <View style={styles.sliderContainer}>
                 <Text style={styles.currentSelection}>
                   {MOMMY_EMOJIS[tempMommyLevel]} {MOMMY_LABELS[tempMommyLevel]} ({tempMommyLevel}/9)
@@ -354,7 +354,7 @@ export default function ChatbotScreen() {
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>🎭 Communication Style</Text>
               <Text style={styles.sectionDescription}>How should I communicate?</Text>
-              
+
               <View style={styles.sliderContainer}>
                 <Text style={styles.currentSelection}>
                   {PERSONALITY_EMOJIS[tempPersonality]} {PERSONALITY_LABELS[tempPersonality]} ({tempPersonality}/9)
